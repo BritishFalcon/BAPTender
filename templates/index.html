@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Chart with Flask and Socket.IO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div id="userFormDiv">
+        <form id="userForm">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username">
+
+          <label for="weight">Weight (in kg):</label>
+          <input type="number" id="weight" name="weight">
+
+          <label for="gender">Gender:</label>
+          <select id="gender" name="gender">
+            <option value=true>Male</option>
+            <option value=false>Female</option>
+          </select>
+
+          <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <canvas id="myChart" width="400" height="200"></canvas>
+    <button id="addDrink" style="display: none">Add Drink</button>
+
+    <script>
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        let loaded = false;
+        var username;
+        var weight;
+        var gender;
+
+        if (document.cookie.includes("username=")) {
+            username = getCookie('username');
+            weight = getCookie('weight');
+            gender = getCookie('gender');
+            loaded = true;
+            document.getElementById("userFormDiv").style.display = "none";  // Hide form if cookies exist
+            document.getElementById("addDrink").style.display = "block";  // Show the add drink button
+
+        } else {
+            document.getElementById("userForm").addEventListener("submit", function(e) {
+                e.preventDefault();  // Prevent the form from refreshing the page
+
+                // Save form inputs as cookies
+                document.cookie = "username=" + document.getElementById("username").value;
+                document.cookie = "weight=" + document.getElementById("weight").value;
+                document.cookie = "gender=" + document.getElementById("gender").value;
+                username = getCookie('username');
+                weight = getCookie('weight');
+                gender = getCookie('gender');
+                loaded = true;
+                document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+                document.getElementById("addDrink").style.display = "block";  // Show the add drink button
+          });
+        }
+
+        let drinks = {};
+
+        function calculateBACOverTime(drinks, bodyWeightInKg, isMale) {
+            const metabolismRate = 0.015;
+            const widmarkFactor = isMale ? 0.68 : 0.55;
+            const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+
+            let timeLabels = [];  // To store the time labels for the graph
+            let bacValues = [];   // To store the BAC values for the graph
+
+            let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
+            let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+
+            for (const [volume, strength, time] of drinks) {
+                // Calculate the alcohol in the current drink
+                const alcoholInGrams = volume * strength * 0.789;  // 0.789 g/cm^3 is the density of ethanol
+                totalAlcohol += alcoholInGrams;
+
+                // Calculate the time elapsed since the first drink (in hours)
+                const timeElapsed = (time - earliestTime) / 3600;
+
+                // Calculate BAC at this point
+                let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                if (bac < 0) bac = 0;  // BAC can't be negative
+
+                // Add time and BAC to the lists
+                const timeLabel = new Date(time * 1000).toLocaleTimeString();  // Convert Unix time to human-readable format
+                timeLabels.push(timeLabel);
+                bacValues.push(bac);
+            }
+
+            return { timeLabels, bacValues };
+        }
+
+        // Chart initialization
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                datasets: [{
+                    label: '# of Votes',
+                    data: [0, 0, 0, 0, 0, 0],  // Initial dummy data
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: false
+                }]
+            }
+        });
+
+        // Socket.IO setup
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            // Initial data request
+        });
+
+        socket.on('update_data', function(users) {
+            // Loop through each user's drinks
+            for (const username in users) {
+                const drinks = users[username];
+                const { timeLabels, bacValues } = calculateBACOverTime(drinks, weight, gender);
+                myChart.data.labels = timeLabels;
+                myChart.data.datasets[0].data = bacValues;
+                myChart.update();
+                socket.emit('print', bacValues)
+            }
+        });
+
+        // Add drink button event
+        document.getElementById('addDrink').addEventListener('click', function() {
+            const requestData = {
+                'User': username,
+                'Volume': 50,
+                'Strength': 0.4
+            };
+            socket.emit('add_drink', requestData);
+        });
+
+    </script>
+</body>
+</html>
