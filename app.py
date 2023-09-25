@@ -32,6 +32,11 @@ def add_drink(data):
     db.session.add(new_drink)
     db.session.commit()
 
+    users = fetch_data()
+    socketio.emit('update_data', users)
+
+
+def fetch_data():
     data = Drinks.query.all()
 
     # Create a list of drinks for each user
@@ -46,10 +51,13 @@ def add_drink(data):
             users[user] = []
         users[user].append([volume, strength, time])
 
-    [print(i) for i in users[user]]
+    return users
 
-    socketio.emit('update_data', users)
 
+@socketio.on('get_data')
+def send_data():
+    users = fetch_data()
+    socketio.emit('update_data', users, room=request.sid)
 
 @app.route('/')
 def index():

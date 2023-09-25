@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Real-time Chart with Flask and Socket.IO</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>BAPTender</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
 </head>
 <body>
     <div id="userFormDiv">
@@ -34,10 +36,19 @@
           if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
+        function generateRandomColor() {
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
+          return `rgba(${r}, ${g}, ${b}, 1)`;
+        }
+
         let loaded = false;
-        var username;
-        var weight;
-        var gender;
+        let username;
+        let weight;
+        let gender;
+        let users;
+        let colormap = {};
 
         if (document.cookie.includes("username=")) {
             username = getCookie('username');
@@ -61,10 +72,12 @@
                 loaded = true;
                 document.getElementById("userFormDiv").style.display = "none";  // Hide the form
                 document.getElementById("addDrink").style.display = "block";  // Show the add drink button
-          });
-        }
 
-        let drinks = {};
+                // Get the user's drinks from the server
+                users = socket.emit('get_data');
+                autoUpdate()
+            });
+        }
 
         function calculateBACOverTime(drinks, bodyWeightInKg, isMale) {
             const metabolismRate = 0.015;
@@ -90,47 +103,99 @@
                 if (bac < 0) bac = 0;  // BAC can't be negative
 
                 // Add time and BAC to the lists
-                const timeLabel = new Date(time * 1000).toLocaleTimeString();  // Convert Unix time to human-readable format
+                const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
                 timeLabels.push(timeLabel);
                 bacValues.push(bac);
             }
 
+            // Add a final point to the graph to show the BAC at current time
+            const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
+            let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+            if (bac < 0) bac = 0;  // BAC can't be negative
+            timeLabels.push(new Date());
+            bacValues.push(bac);
+
             return { timeLabels, bacValues };
         }
+
+        function autoUpdate() {
+          // Iterate through user data to populate or update datasets
+          for (const username in users) {
+            const drinks = users[username];
+            const { timeLabels, bacValues } = calculateBACOverTime(drinks, weight, gender);
+
+            // Check if dataset for user already exists
+            let dataset = myChart.data.datasets.find(d => d.label === username);
+
+            if (!dataset) {
+              // Create new dataset if not exists
+              if (!colormap[username]) {
+                colormap[username] = generateRandomColor(); // Your color function
+              }
+
+              const newDataset = {
+                label: username,
+                data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
+                borderColor: colormap[username],
+                fill: false,
+              };
+
+              myChart.data.datasets.push(newDataset);
+            } else {
+              // Update existing dataset
+              dataset.data = timeLabels.map((time, index) => ({ x: time, y: bacValues[index] }));
+            }
+          }
+
+          // Finally, update the chart
+          myChart.update();
+        }
+
 
         // Chart initialization
         var ctx = document.getElementById('myChart').getContext('2d');
         var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-                datasets: [{
-                    label: '# of Votes',
-                    data: [0, 0, 0, 0, 0, 0],  // Initial dummy data
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1,
-                    fill: false
-                }]
+          type: 'line',
+          data: {
+            datasets: []
+          },
+          options: {
+            scales: {
+              x: {
+                type: 'time',
+                  time: {
+                    unit: 'second'
+                  },
+                title: {
+                  display: true,
+                  text: 'Time'
+                },
+                ticks: {
+                  source: 'auro'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'BAP'
+                }
+              }
             }
+          }
         });
+
 
         // Socket.IO setup
         var socket = io.connect('http://' + document.domain + ':' + location.port);
 
         socket.on('connect', function() {
-            // Initial data request
+            if (loaded) {
+                socket.emit('get_data');
+            }
         });
 
-        socket.on('update_data', function(users) {
-            // Loop through each user's drinks
-            for (const username in users) {
-                const drinks = users[username];
-                const { timeLabels, bacValues } = calculateBACOverTime(drinks, weight, gender);
-                myChart.data.labels = timeLabels;
-                myChart.data.datasets[0].data = bacValues;
-                myChart.update();
-                socket.emit('print', bacValues)
-            }
+        socket.on('update_data', function(get_users) {
+            users = get_users;
         });
 
         // Add drink button event
@@ -142,6 +207,9 @@
             };
             socket.emit('add_drink', requestData);
         });
+
+        // Auto update every second
+        setInterval(autoUpdate, 1000);
 
     </script>
 </body>
