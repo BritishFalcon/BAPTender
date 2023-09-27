@@ -18,8 +18,8 @@
 
           <label for="gender">Gender:</label>
           <select id="gender" name="gender">
-            <option value=true>Male</option>
-            <option value=false>Female</option>
+            <option value=male>Male</option>
+            <option value=female>Female</option>
           </select>
 
           <input type="submit" value="Submit">
@@ -44,16 +44,18 @@
         }
 
         let loaded = false;
-        let username;
-        let weight;
-        let gender;
+        let my_username;
+        let my_weight;
+        let my_gender;
         let users;
+        let drinks;
         let colormap = {};
+        let bypass = false;  // Set to true to bypass the login form
 
-        if (document.cookie.includes("username=")) {
-            username = getCookie('username');
-            weight = getCookie('weight');
-            gender = getCookie('gender');
+        if (document.cookie.includes("username=") & !bypass) {
+            my_username = getCookie('username');
+            my_weight = getCookie('weight');
+            my_gender = getCookie('gender');
             loaded = true;
             document.getElementById("userFormDiv").style.display = "none";  // Hide form if cookies exist
             document.getElementById("addDrink").style.display = "block";  // Show the add drink button
@@ -66,22 +68,22 @@
                 document.cookie = "username=" + document.getElementById("username").value;
                 document.cookie = "weight=" + document.getElementById("weight").value;
                 document.cookie = "gender=" + document.getElementById("gender").value;
-                username = getCookie('username');
-                weight = getCookie('weight');
-                gender = getCookie('gender');
+                my_username = getCookie('username');
+                my_weight = getCookie('weight');
+                my_gender = getCookie('gender');
                 loaded = true;
                 document.getElementById("userFormDiv").style.display = "none";  // Hide the form
                 document.getElementById("addDrink").style.display = "block";  // Show the add drink button
 
-                // Get the user's drinks from the server
-                users = socket.emit('get_data');
+                // Get the users' drinks from the server
+                drinks = socket.emit('new_user', [my_username, my_weight, my_gender]);
                 autoUpdate()
             });
         }
 
-        function calculateBACOverTime(drinks, bodyWeightInKg, isMale) {
-            const metabolismRate = 0.015;
-            const widmarkFactor = isMale ? 0.68 : 0.55;
+        function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
+            const metabolismRate = 0.015;  // 0.015 g/100mL/hour
+            const widmarkFactor = (gender=='male') ? 0.68 : 0.55;
             const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
 
             let timeLabels = [];  // To store the time labels for the graph
@@ -89,6 +91,10 @@
 
             let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
             let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+
+            // Provide a starting point for the graph
+            timeLabels.push(new Date(earliestTime * 1000));
+            bacValues.push(0);
 
             for (const [volume, strength, time] of drinks) {
                 // Calculate the alcohol in the current drink
@@ -98,20 +104,28 @@
                 // Calculate the time elapsed since the first drink (in hours)
                 const timeElapsed = (time - earliestTime) / 3600;
 
+                console.log(totalAlcohol, bodyWeightInGrams, widmarkFactor, metabolismRate, timeElapsed)
+
                 // Calculate BAC at this point
                 let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
-                if (bac < 0) bac = 0;  // BAC can't be negative
+
+                if (bac <= 0) bac = 0;  // BAC can't be negative
 
                 // Add time and BAC to the lists
                 const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
                 timeLabels.push(timeLabel);
                 bacValues.push(bac);
+
             }
 
             // Add a final point to the graph to show the BAC at current time
             const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
             let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
-            if (bac < 0) bac = 0;  // BAC can't be negative
+            if (bac < 0) {
+                socket.emit('remove_user', username);
+                return { timeLabels: [], bacValues: [] };
+            }
+
             timeLabels.push(new Date());
             bacValues.push(bac);
 
@@ -120,9 +134,20 @@
 
         function autoUpdate() {
           // Iterate through user data to populate or update datasets
-          for (const username in users) {
-            const drinks = users[username];
-            const { timeLabels, bacValues } = calculateBACOverTime(drinks, weight, gender);
+          for (const username in drinks) {
+            const user_drinks = drinks[username];
+            const weight = users[username][0];
+            const gender = users[username][1];
+
+            const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
+            if (timeLabels.length == 0) {
+                let dataset = myChart.data.datasets.find(d => d.label === username);
+                if (dataset) {
+                    myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
+                }
+                console.log("Deleted user " + username + " from the graph")
+                continue;
+            };  // Skip if BAC is negative
 
             // Check if dataset for user already exists
             let dataset = myChart.data.datasets.find(d => d.label === username);
@@ -164,7 +189,7 @@
               x: {
                 type: 'time',
                   time: {
-                    unit: 'second'
+                    unit: 'minute'
                   },
                 title: {
                   display: true,
@@ -176,12 +201,11 @@
                   display: true,
                   text: 'BAP'
                 },
-                ticks: {
-                  source: 'auto',
-                  beginAtZero: true
-                }
+                min: 0,
               }
-            }
+            },
+            responsive: true,
+            maintainAspectRatio: true,
           }
         });
 
@@ -195,14 +219,16 @@
             }
         });
 
-        socket.on('update_data', function(get_users) {
-            users = get_users;
+        socket.on('update_data', function(result) {
+            console.log(result)
+            drinks = result[0];
+            users = result[1];
         });
 
         // Add drink button event
         document.getElementById('addDrink').addEventListener('click', function() {
             const requestData = {
-                'User': username,
+                'User': my_username,
                 'Volume': 50,
                 'Strength': 0.4
             };

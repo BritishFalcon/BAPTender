@@ -1,3 +1,4 @@
+import flask
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
@@ -17,6 +18,12 @@ class Drinks(db.Model):
     Strength = db.Column(db.Float, nullable=False)
 
 
+class Users(db.Model):
+    User = db.Column(db.String(50), primary_key=True, nullable=False)
+    Weight = db.Column(db.Float, nullable=False)
+    Gender = db.Column(db.String(6), nullable=False)
+
+
 @socketio.on('print')
 def print_out(data):
     print(data)
@@ -32,35 +39,78 @@ def add_drink(data):
     db.session.add(new_drink)
     db.session.commit()
 
-    users = fetch_data()
-    socketio.emit('update_data', users)
+    drinks, users = fetch_data()
+    socketio.emit('update_data', [drinks, users])
 
 
 def fetch_data():
-    data = Drinks.query.all()
+    drinks = Drinks.query.all()
+    users = Users.query.all()
 
     # Create a list of drinks for each user
-    users = {}
-    for i in data:
+    new_drinks = {}
+    for i in drinks:
         user = i.User
         volume = i.Volume
         strength = i.Strength
         time = i.Time.timestamp()
 
-        if user not in users:
-            users[user] = []
-        users[user].append([volume, strength, time])
+        if user not in drinks:
+            new_drinks[user] = []
 
-    return users
+        new_drinks[user].append([volume, strength, time])
+
+    # Create a list of users
+    new_users = {}
+    for i in users:
+        user = i.User
+        weight = i.Weight
+        gender = i.Gender
+        new_users[user] = [weight, gender]
+
+    return new_drinks, new_users
 
 
 @socketio.on('get_data')
 def send_data():
-    users = fetch_data()
-    socketio.emit('update_data', users, room=request.sid)
+    drinks, users = fetch_data()
+    print(drinks)
+    socketio.emit('update_data', [drinks, users], room=request.sid)
+
+
+@socketio.on('new_user')
+def new_user(data):
+    user = data[0]
+    weight = data[1]
+    gender = data[2]
+
+    new_user = Users(
+        User=user,
+        Weight=weight,
+        Gender=gender
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+
+@socketio.on('remove_user')
+def remove_user(username):
+    drinks = Drinks.query.filter_by(User=username).all()
+    for i in drinks:
+        db.session.delete(i)
+    db.session.commit()
+
+    drinks, users = fetch_data()
+    socketio.emit('update_data', [drinks, users])
+
 
 @app.route('/')
 def index():
+    delete_cookies = True
+    if delete_cookies:
+        for cookie in request.cookies:
+            flask.make_response().set_cookie(cookie, expires=0)
     return render_template("index.html")
 
 
