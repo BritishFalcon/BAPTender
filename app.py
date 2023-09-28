@@ -74,7 +74,6 @@ def fetch_data():
 @socketio.on('get_data')
 def send_data():
     drinks, users = fetch_data()
-    print(drinks)
     socketio.emit('update_data', [drinks, users], room=request.sid)
 
 
@@ -90,7 +89,7 @@ def new_user(data):
         Gender=gender
     )
 
-    db.session.add(new_user)
+    db.session.merge(new_user)
     db.session.commit()
 
 

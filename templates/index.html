@@ -50,7 +50,7 @@
         let users;
         let drinks;
         let colormap = {};
-        let bypass = false;  // Set to true to bypass the login form
+        let bypass = true;  // Set to true to bypass the login form
 
         if (document.cookie.includes("username=") & !bypass) {
             my_username = getCookie('username');
