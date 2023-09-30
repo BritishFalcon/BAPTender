@@ -55,7 +55,7 @@ def fetch_data():
         strength = i.Strength
         time = i.Time.timestamp()
 
-        if user not in drinks:
+        if user not in new_drinks:
             new_drinks[user] = []
 
         new_drinks[user].append([volume, strength, time])
