@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultra Sophisticated Template</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .card {
+            border-radius: 15px;
+        }
+        .card-header {
+            background-color: #333;
+            color: #fff;
+        }
+        .btn-primary {
+            background-color: #007bff;
+        }
+        #image {
+            background-image: url('https://wallpapers.com/images/featured-full/bar-c5vakob55hk4alvi.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 200px;
+        }
+        #userFormDiv {
+            max-width: 400px;
+            margin: auto;
+            background: #fafafa;
+            padding: 30px;  /* More padding for the form div */
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0px grey;
+            margin-top: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;  /* More bottom margin for each form-group */
+        }
+
+        .form-control {
+            max-width: 300px;  /* Max width for input boxes */
+            margin: auto;  /* Centering the input boxes */
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Main Title and Subtitle, Centered -->
+    <div class="text-center">
+      <h1>BAPTender</h1>
+      <small class="text-muted">This was a stupid idea.</small>
+    </div>
+
+    <div id="userFormDiv" style="display: none">
+      <h1>Sign Up, Buttercup 🌼</h1>
+      <form id="userForm">
+        <div class="form-group">
+          <label for="username">Username (because you need identity, even on the internet)</label>
+          <input type="text" id="username" class="form-control" placeholder="Bepsi Man" required>
+        </div>
+        <div class="form-group">
+          <label for="weight">Weight (in kg, because we're civilized)</label>
+          <input type="number" id="weight" class="form-control" placeholder="Don't lie, we won't judge... much" required>
+        </div>
+        <div class="form-group">
+          <label>Gender (or your approximation thereof)</label>
+          <select id="gender" class="form-control">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit for Judgment 🤖</button>
+      </form>
+    </div>
+
+    <div class="container" style="display: none" id="main">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Graph</div>
+                    <div class="card-body" id="graph">
+                        <canvas id="myChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Leaderboard</div>
+                    <div class="card-body" id="leaderboard">
+                        <div id="leaderboard"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="entry">
+            <div class="col-md-12">
+                <form>
+                    <div class="form-group">
+                        <label for="spinbox1">Volume (ml):</label>
+                        <input type="number" class="form-control" id="spinbox1", min=25, max=500>
+                    </div>
+                    <div class="form-group">
+                        <label for="spinbox2">Strength (%):</label>
+                        <input type="number" class="form-control" id="spinbox2", min=1, max="75">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="addDrink">Add Drink</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header">Information Table</div>
+            <div class="card-body">
+                <table class="table table-sm table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th scope="col">BAC (%)</th>
+                            <th scope="col">Behavior</th>
+                            <th scope="col">Impairment</th>
+                            <th scope="col">GPT-4's Translation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>0.001–0.029</td>
+                            <td>Average individual appears normal</td>
+                            <td>Subtle effects that can be detected with special tests</td>
+                            <td>Believes they are a trivia champion<br>Can't spell 'Mississippi'</td>
+                        </tr>
+                        <tr>
+                            <td>0.030–0.059</td>
+                            <td>Mild euphoria<br>Relaxation<br>Joyousness<br>Talkativeness<br>Decreased inhibition</td>
+                            <td>Concentration</td>
+                            <td>Starts to appreciate Nickelback<br>Forgets the name of their first pet</td>
+                        </tr>
+                        <tr>
+                            <td>0.060–0.099</td>
+                            <td>Blunted feelings<br>Reduced sensitivity to pain<br>Euphoria<br>Disinhibition<br>Extraversion</td>
+                            <td>Reasoning<br>Depth perception<br>Peripheral vision<br>Glare recovery</td>
+                            <td>Thinks they can dance<br>Buys Bitcoin<br>Loses at tic-tac-toe<br>Struggles with velcro shoes</td>
+
+                        </tr>
+                        <tr>
+                            <td>0.100–0.199</td>
+                            <td>Over-expression<br>Boisterousness<br>Possibility of nausea and vomiting</td>
+                            <td>Reflexes<br>Reaction time<br>Gross motor control<br>Staggering<br>Slurred speech<br>Temporary erectile dysfunction</td>
+                            <td>Attempts to moonwalk<br>Thinks they can speak fluent Klingon<br>Can't differentiate left from right (becomes Sol)<br>Bumps into 'invisible' walls</td>
+
+                        </tr>
+                        <tr>
+                            <td>0.200–0.299</td>
+                            <td>Nausea<br>Vomiting<br>Emotional swings<br>Anger or sadness<br>Partial loss of understanding<br>Impaired sensations<br>Decreased libido<br>Possibility of stupor</td>
+                            <td>Severe motor impairment<br>Loss of consciousness<br>Memory blackout</td>
+                            <td>Starts a podcast in the bathroom<br>Joins a cult, accidentally<br>Forgets how to swallow<br>Laughs at their own jokes</td>
+
+                        </tr>
+                        <tr>
+                            <td>0.300–0.399</td>
+                            <td>Stupor<br>Central nervous system depression<br>Loss of understanding<br>Lapses in and out of consciousness<br>Low possibility of death</td>
+                            <td>Bladder function<br>Breathing<br>Dysequilibrium<br>Heart rate</td>
+                            <td>Tries to invent a new color<br>Believes they can talk to plants<br>Can't recognize own reflection<br>Thinks they're on a reality show</td>
+
+                        </tr>
+                        <tr>
+                            <td>0.400–0.500</td>
+                            <td>Severe central nervous system depression<br>Coma<br>Possibility of death</td>
+                            <td>Breathing<br>Heart rate<br>Positional alcohol nystagmus</td>
+                            <td>Attempts time travel with a cardboard box<br>Writes love letters to appliances<br>Confuses hands for food<br>Argues with a mop</td>
+
+                        </tr>
+                        <tr>
+                            <td>>0.50</td>
+                            <td>High possibility of death</td>
+                            <td>Lack of photosynthesis</td>
+                            <td>Appoints self as Emperor of the Galaxy<br>Forgets how to breathe, possibly</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+    <script>
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function generateRandomColor() {
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
+          return `rgba(${r}, ${g}, ${b}, 1)`;
+        }
+
+        let loaded = false;
+        let my_username;
+        let my_weight;
+        let my_gender;
+        let users;
+        let drinks;
+        let colormap = {};
+        let bypass = false;  // Set to true to bypass the login form
+
+        if (document.cookie.includes("username=") & !bypass) {
+            my_username = getCookie('username');
+            my_weight = getCookie('weight');
+            my_gender = getCookie('gender');
+            loaded = true;
+            document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+            document.getElementById("main").style.display = "block";  // Show the main page
+
+        } else {
+            // Show the form
+            document.getElementById("userFormDiv").style.display = "block";
+            document.getElementById("userForm").addEventListener("submit", function(e) {
+                e.preventDefault();  // Prevent the form from refreshing the page
+
+                // Save form inputs as cookies
+                document.cookie = "username=" + document.getElementById("username").value;
+                document.cookie = "weight=" + document.getElementById("weight").value;
+                document.cookie = "gender=" + document.getElementById("gender").value;
+                my_username = getCookie('username');
+                my_weight = getCookie('weight');
+                my_gender = getCookie('gender');
+                loaded = true;
+                document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+                document.getElementById("main").style.display = "block";  // Show the main page
+
+                // Get the users' drinks from the server
+                drinks = socket.emit('new_user', [my_username, my_weight, my_gender]);
+                socket.emit('get_data')
+                autoUpdate()
+            });
+        }
+
+        function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
+            const metabolismRate = 0.015;  // 0.015 g/100mL/hour // FIX THIS
+            const widmarkFactor = (gender=='male') ? 0.68 : 0.55;
+            const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+
+            let timeLabels = [];  // To store the time labels for the graph
+            let bacValues = [];   // To store the BAC values for the graph
+
+            let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
+            let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+
+            for (const [volume, strength, time] of drinks) {
+                // Calculate the time elapsed since the first drink (in hours)
+                const timeElapsed = (time - earliestTime) / 3600;
+
+                // TODO: This still comes up wrong. Fix it or add a fudge factor.
+                let old_bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                if (old_bac < 0) old_bac = 0;  // BAC can't be negative
+                timeLabels.push(new Date(time * 1000));
+                bacValues.push(old_bac);
+
+                // Calculate the alcohol in the current drink
+                const alcoholInGrams = volume * strength * 0.789;  // 0.789 g/cm^3 is the density of ethanol
+                totalAlcohol += alcoholInGrams;
+
+                // Calculate BAC at this point
+                let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                if (bac <= 0) bac = 0;  // BAC can't be negative
+
+                // Add time and BAC to the lists
+                const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
+                timeLabels.push(timeLabel);
+                bacValues.push(bac);
+            }
+
+            // Add a final point to the graph to show the BAC at current time
+            const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
+            let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+            if (bac < 0) {
+                socket.emit('remove_user', username);
+                return { timeLabels: [], bacValues: [] };
+            }
+
+            timeLabels.push(new Date());
+            bacValues.push(bac);
+
+            return { timeLabels, bacValues };
+        }
+
+        function autoUpdate() {
+          // Iterate through user data to populate or update datasets
+          for (const username in drinks) {
+            const user_drinks = drinks[username];
+            const weight = users[username][0];
+            const gender = users[username][1];
+
+            const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
+            if (timeLabels.length == 0) {
+                let dataset = myChart.data.datasets.find(d => d.label === username);
+                if (dataset) {
+                    myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
+                }
+                console.log("Deleted user " + username + " from the graph")
+                continue;
+            };  // Skip if BAC is negative
+
+            // Check if dataset for user already exists
+            let dataset = myChart.data.datasets.find(d => d.label === username);
+
+            if (!dataset) {
+              // Create new dataset if not exists
+              if (!colormap[username]) {
+                colormap[username] = generateRandomColor(); // Your color function
+              }
+
+              const newDataset = {
+                label: username,
+                data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
+                borderColor: colormap[username],
+                fill: false,
+              };
+
+              myChart.data.datasets.push(newDataset);
+            } else {
+              // Update existing dataset
+              dataset.data = timeLabels.map((time, index) => ({ x: time, y: bacValues[index] }));
+            }
+          }
+
+          // Finally, update the chart
+          myChart.update();
+
+           // Update the leaderboard
+           let leaderboard = document.getElementById("leaderboard");
+           leaderboard.innerHTML = "";
+           let sorted_users = myChart.data.datasets.map(dataset => dataset.label).sort((a, b) => (myChart.data.datasets.find(ds => ds.label === b).data.slice(-1)[0] || 0) - (myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0] || 0));
+
+           for (const username of sorted_users) {
+               // Take BAC from the chart
+               let bac = myChart.data.datasets.find(dataset => dataset.label === username).data.slice(-1)[0].y;
+               let row = document.createElement("div");
+               row.className = "row";
+               let user_col = document.createElement("div");
+               user_col.className = "col";
+               user_col.innerHTML = username;
+               let bac_col = document.createElement("div");
+               bac_col.className = "col";
+               bac_col.innerHTML = bac.toFixed(3);
+               row.appendChild(user_col);
+               row.appendChild(bac_col);
+               leaderboard.appendChild(row);
+
+               // Highlight the current user
+               if (username == my_username) {
+                       // Make the row yellow
+                       row.style.backgroundColor = "#ffc107";
+                       row.style.color = "#333";
+
+                   // Get all the rows in tbody
+                   let rows = document.querySelectorAll(".table tbody tr");
+
+                   // Loop through each row to find the appropriate BAC range
+                   for (let row of rows) {
+                     let bacCell = row.cells[0].innerText;
+                     let [lower, upper] = bacCell.split('–').map(Number);
+
+                     // Special case for the last row (BAC > 0.50)
+                     if (bacCell.startsWith(">")) {
+                       lower = parseFloat(bacCell.substr(1));
+                       upper = Infinity;
+                     }
+
+                     if (bac >= lower && bac <= upper) {
+                       row.style.backgroundColor = "yellow";  // Change to any color you like
+                       break;  // Once we find the row, no need to continue the loop
+                     }
+                     else {
+                         // Alternate between white and grey (grey on odd rows)
+                        if (row.rowIndex % 2 == 0) {
+                            row.style.backgroundColor = "#fff";
+                        } else {
+                            row.style.backgroundColor = "#f4f4f4";
+                        }
+                     }
+                   }
+               }
+           }
+
+                      // Convert the NodeList to an array
+           let rows = Array.from(leaderboard.children);
+
+           // Sort the array based on the BAC value
+           rows.sort((a, b) => {
+             let bacA = parseFloat(a.querySelector('.col:last-child').innerHTML);
+             let bacB = parseFloat(b.querySelector('.col:last-child').innerHTML);
+             return bacB - bacA; // Sort in descending order
+           });
+
+           // Remove all existing rows from the leaderboard
+           while (leaderboard.firstChild) {
+             leaderboard.removeChild(leaderboard.firstChild);
+           }
+
+           // Re-append the sorted rows
+           rows.forEach(row => leaderboard.appendChild(row));
+        }
+
+
+        // Chart initialization
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: []
+          },
+          options: {
+            scales: {
+              x: {
+                type: 'time',
+                  time: {
+                    unit: 'minute'
+                  },
+                title: {
+                  display: true,
+                  text: 'Time'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'BAC'
+                },
+                min: 0,
+              }
+            },
+            responsive: true,
+            maintainAspectRatio: true,
+          }
+        });
+
+
+        // Socket.IO setup
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            if (loaded) {
+                socket.emit('get_data');
+            }
+        });
+
+        socket.on('update_data', function(result) {
+            drinks = result[0];
+            users = result[1];
+        });
+
+        // Add drink button event
+        document.getElementById('addDrink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const requestData = {
+                'User': my_username,
+                'Volume': document.getElementById('spinbox1').value,
+                'Strength': document.getElementById('spinbox2').value * 0.01,
+            };
+            socket.emit('add_drink', requestData);
+        });
+
+        // Auto update every second
+        setInterval(autoUpdate, 1000);
+
+    </script>
+
+</body>
+</html>
