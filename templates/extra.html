@@ -482,7 +482,7 @@
             // Get the last entry, but first check they have entries at all:
             let user_dataset = myChart.data.datasets.filter(dataset => dataset.label === my_username);
             if (user_dataset.length > 0) {
-                lastEntry = user_dataset[0].data.slice(-1)[0].x.getTime();
+                let lastEntry = user_dataset[0].data.slice(-1)[0].x.getTime();
                 if (Date.now() - lastEntry < 5000) {
                     alert("Bro slow down lol");
                     return;
