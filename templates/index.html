@@ -50,7 +50,7 @@
         let users;
         let drinks;
         let colormap = {};
-        let bypass = true;  // Set to true to bypass the login form
+        let bypass = false;  // Set to true to bypass the login form
 
         if (document.cookie.includes("username=") & !bypass) {
             my_username = getCookie('username');
@@ -82,7 +82,7 @@
         }
 
         function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
-            const metabolismRate = 0.015;  // 0.015 g/100mL/hour
+            const metabolismRate = 0.015;  // 0.015 g/100mL/hour // FIX THIS
             const widmarkFactor = (gender=='male') ? 0.68 : 0.55;
             const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
 
@@ -92,30 +92,28 @@
             let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
             let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
 
-            // Provide a starting point for the graph
-            timeLabels.push(new Date(earliestTime * 1000));
-            bacValues.push(0);
-
             for (const [volume, strength, time] of drinks) {
+                // Calculate the time elapsed since the first drink (in hours)
+                const timeElapsed = (time - earliestTime) / 3600;
+
+                let old_bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                if (old_bac < 0) old_bac = 0;  // BAC can't be negative
+                timeLabels.push(new Date(time * 1000));
+                bacValues.push(old_bac);
+
                 // Calculate the alcohol in the current drink
                 const alcoholInGrams = volume * strength * 0.789;  // 0.789 g/cm^3 is the density of ethanol
                 totalAlcohol += alcoholInGrams;
 
-                // Calculate the time elapsed since the first drink (in hours)
-                const timeElapsed = (time - earliestTime) / 3600;
-
-                console.log(totalAlcohol, bodyWeightInGrams, widmarkFactor, metabolismRate, timeElapsed)
-
                 // Calculate BAC at this point
                 let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
-
                 if (bac <= 0) bac = 0;  // BAC can't be negative
+                console.log("BAC for " + username + " at " + time + " is " + bac)
 
                 // Add time and BAC to the lists
                 const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
                 timeLabels.push(timeLabel);
                 bacValues.push(bac);
-
             }
 
             // Add a final point to the graph to show the BAC at current time
@@ -199,7 +197,7 @@
               y: {
                 title: {
                   display: true,
-                  text: 'BAP'
+                  text: 'BAC'
                 },
                 min: 0,
               }

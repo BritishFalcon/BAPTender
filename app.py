@@ -2,8 +2,8 @@ import flask
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-import numpy as np
 import time
+import socket
 app = Flask(__name__)
 socketio = SocketIO(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/main'
@@ -55,7 +55,7 @@ def fetch_data():
         strength = i.Strength
         time = i.Time.timestamp()
 
-        if user not in drinks:
+        if user not in new_drinks:
             new_drinks[user] = []
 
         new_drinks[user].append([volume, strength, time])
@@ -110,13 +110,18 @@ def index():
     if delete_cookies:
         for cookie in request.cookies:
             flask.make_response().set_cookie(cookie, expires=0)
-    return render_template("index.html")
+    return render_template("extra.html")
 
 
 @app.route('/data')
 def data():
     # Your data logic here
     return {"data": [1, 2, 3, 4]}
+
+
+@socketio.on('hello')
+def connect(data):
+    print(data)
 
 
 if __name__ == '__main__':
