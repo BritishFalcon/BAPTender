@@ -471,11 +471,30 @@
         // Add drink button event
         document.getElementById('addDrink').addEventListener('click', function(e) {
             e.preventDefault();
+            let volume = document.getElementById('spinbox1').value;
+            let strength = document.getElementById('spinbox2').value * 0.01;
+            if (volume < 25 || volume > 500 || strength < 0.01 || strength > 0.75) {
+                alert("Invalid drink parameters");
+                return;
+            }
+
+            // Check the button isn't being pressed within 5 seconds of the user's last entry
+            // Get the last entry, but first check they have entries at all:
+            let user_dataset = myChart.data.datasets.filter(dataset => dataset.label === my_username);
+            if (user_dataset.length > 0) {
+                lastEntry = user_dataset[0].data.slice(-1)[0].x.getTime();
+                if (Date.now() - lastEntry < 5000) {
+                    alert("Bro slow down lol");
+                    return;
+                }
+            }
+
             const requestData = {
                 'User': my_username,
-                'Volume': document.getElementById('spinbox1').value,
-                'Strength': document.getElementById('spinbox2').value * 0.01,
+                'Volume': volume,
+                'Strength':strength
             };
+
             socket.emit('add_drink', requestData);
         });
 
