@@ -52,6 +52,16 @@
             margin: auto;  /* Centering the input boxes */
         }
 
+        .center-label {
+            display: block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            display: block;
+            margin: auto;
+        }
+
     </style>
 </head>
 <body>
@@ -107,11 +117,11 @@
             <div class="col-md-12">
                 <form>
                     <div class="form-group">
-                        <label for="spinbox1">Volume (ml):</label>
+                        <label class="center-label" for="spinbox1">Volume (ml):</label>
                         <input type="number" class="form-control" id="spinbox1", min=25, max=500>
                     </div>
                     <div class="form-group">
-                        <label for="spinbox2">Strength (%):</label>
+                        <label class="center-label" for="spinbox2">Strength (%):</label>
                         <input type="number" class="form-control" id="spinbox2", min=1, max="75">
                     </div>
                     <button type="submit" class="btn btn-primary" id="addDrink">Add Drink</button>
@@ -269,7 +279,8 @@
                 const timeElapsed = (time - earliestTime) / 3600;
 
                 // TODO: This still comes up wrong. Fix it or add a fudge factor.
-                let old_bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                let old_bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed)
+                old_bac = old_bac * 0.77777777777;
                 if (old_bac < 0) old_bac = 0;  // BAC can't be negative
                 timeLabels.push(new Date(time * 1000));
                 bacValues.push(old_bac);
@@ -280,6 +291,7 @@
 
                 // Calculate BAC at this point
                 let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+                bac = bac * 0.77777777777;
                 if (bac <= 0) bac = 0;  // BAC can't be negative
 
                 // Add time and BAC to the lists
@@ -291,6 +303,7 @@
             // Add a final point to the graph to show the BAC at current time
             const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
             let bac = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) - (metabolismRate * timeElapsed);
+            bac = bac * 0.77777777777;
             if (bac < 0) {
                 socket.emit('remove_user', username);
                 return { timeLabels: [], bacValues: [] };
