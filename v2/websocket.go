@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -60,6 +61,18 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			err := json.Unmarshal([]byte(jsonString), &jsonMap)
 			if err != nil {
 				log.Printf("Error in json unmarshal - %v\n", err)
+			}
+			log.Println(jsonMap)
+			// TODO check if the user already exists
+			cmd := jsonMap["cmd"]
+			data := jsonMap["data"].(map[string]any)
+			switch cmd {
+			case "new user":
+				weightInt, _ := strconv.Atoi(data["weight"].(string))
+				err := AddUser(data["name"].(string), weightInt, data["sex"].(string), data["room"].(string))
+				if err != nil {
+					log.Printf("Error in add user - %v\n", err)
+				}
 			}
 			// verify browser
 			// apply changes
