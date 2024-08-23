@@ -1,4 +1,4 @@
-FROM golang as builder
+FROM golang AS builder
 LABEL authors="Alan"
 
 WORKDIR /app
