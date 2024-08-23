@@ -16,6 +16,8 @@ WORKDIR /app
 
 RUN mkdir -p /app/frontend
 COPY --from=builder /app/baptender /app/baptender
+COPY --from=builder /app/.env /app/.env
 COPY --from=builder /app/templates/ /app/templates/
+COPY --from=builder /app/js/ /app/js/
 
 ENTRYPOINT ["/app/baptender"]
