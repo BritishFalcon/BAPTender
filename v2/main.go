@@ -16,6 +16,8 @@ func main() {
 	http.HandleFunc("/ws", Handler)
 
 	// serve static files
+	fsJS := http.FileServer(http.Dir("js"))
+	http.Handle("/js/", http.StripPrefix("/js/", fsJS))
 	fsTemplates := http.FileServer(http.Dir("templates"))
 	http.Handle("/", noCache(fsTemplates))
 
