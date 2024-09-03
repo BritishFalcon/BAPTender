@@ -15,9 +15,12 @@ function generateRandomColour() {
     return `rgba(${r}, ${g}, ${b}, 1)`;
 }
 
-let me, users, drinks
-let colourMap = {}
+let me, drinks
+let users = {}
 let socket
+let colourmap = {}
+let timeLabels = []
+let bacValues = []
 
 function getOrSetUserInformation() {
     if (document.cookie.includes("username=")) {
@@ -41,7 +44,7 @@ function getOrSetUserInformation() {
             document.cookie = "room=" + document.getElementById("room").value;
             let myRoom = document.getElementById("room").value || "Global";
 
-            me = new User(myUsername, myWeight, mySex, myRoom)
+            me = new User(myUsername, myWeight, mySex, myRoom, 0.0, generateRandomColour())
             let payload = {
                 cmd: "new user",
                 data: me
@@ -64,7 +67,86 @@ function initPage() {
         socket.send("init")
         socket.addEventListener("message", function(e) {
             const jsonData = JSON.parse(e.data);
-            console.warn(jsonData)
+            //console.warn(jsonData)
+            for (let i = 0; i < jsonData.length; i++) {
+                if (jsonData[i].cmd === "updateBAC") {
+                    let now = moment().format('YYYY-MM-DDTHH:mm:ss');  // This is in ISO 8601 format
+                    timeLabels.push(now);
+                    let data = jsonData[i].data;
+                    let entries = Object.entries(data);
+                    entries.sort((a, b) => b[1] - a[1]);
+                    let sortedData = Object.fromEntries(entries);
+                    bacValues.push(sortedData)
+                    let leaderboard = document.getElementById("leaderboard");
+                    leaderboard.innerHTML = "";
+                    for (const [key, value] of Object.entries(sortedData)) {
+                        let dataset = myChart.data.datasets.find(dataset => dataset.label === key);
+                        if (!dataset) {
+                            if (!colourmap[key]) {
+                                colourmap[key] = generateRandomColour();
+                            }
+                            const newDataset = {
+                                label: key,
+                                data: timeLabels.map((time, index) => ({x: time, y: value})),
+                                borderColor: colourmap[key],
+                                fill: false,
+                                pointRadius: 0
+                            }
+
+                            myChart.data.datasets.push(newDataset);
+                        } else {
+                            dataset.data = timeLabels.map((time, index) => ({x: time, y: value}))
+                        }
+
+                        myChart.update()
+
+                        users[key] = value;
+                        let row = document.createElement("div")
+                        row.className = "row";
+                        let user_col = document.createElement("div");
+                        user_col.className = "col";
+                        user_col.innerHTML = key;
+                        let bac_col = document.createElement("div");
+                        bac_col.className = "col";
+                        bac_col.innerHTML = value.toFixed(3);
+                        row.appendChild(user_col);
+                        row.appendChild(bac_col);
+                        leaderboard.appendChild(row);
+
+                        if (key === me.name) {
+                            row.style.backgroundColor = "#ffc107";
+                            row.style.color = "#333";
+                            let rows = document.querySelectorAll(".table tbody tr");
+
+                            // Loop through each row to find the appropriate BAC range
+                            for (let row of rows) {
+                                let bacCell = row.cells[0].innerText;
+                                let [lower, upper] = bacCell.split('–').map(Number);
+                                upper += 0.001
+
+                                // Special case for the last row (BAC > 0.50)
+                                if (bacCell.startsWith(">")) {
+                                    lower = parseFloat(bacCell.substr(1));
+                                    upper = Infinity;
+                                }
+                                if (value >= lower && value <= upper) {
+                                    row.style.backgroundColor = "yellow";  // Change to any color you like
+                                    break;  // Once we find the row, no need to continue the loop
+                                }
+                                else {
+                                    // Alternate between white and grey (grey on odd rows)
+                                    if (row.rowIndex % 2 == 0) {
+                                        row.style.backgroundColor = "#fff";
+                                    } else {
+                                        row.style.backgroundColor = "#f4f4f4";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    myChart.update()
+                }
+            }
         })
     }
     getOrSetUserInformation()
@@ -79,7 +161,10 @@ function initPage() {
                 x: {
                     type: 'time',
                     time: {
-                        unit: 'minute'
+                        unit: 'second',
+                        displayFormats: {
+                            second: 'h:mm:ss a',
+                        }
                     },
                     title: {
                         display: true,
