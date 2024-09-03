@@ -1,9 +1,11 @@
 export class User {
-    constructor(name, weight, sex, room) {
+    constructor(name, weight, sex, room, bac, colour) {
         this.name = name;
         this.weight = weight;
         this.sex = sex;
         this.room = room;
+        this.bac = bac;
+        this.colour = colour;
     }
 
     getName() {
@@ -32,5 +34,12 @@ export class User {
     }
     setRoom(room) {
         this.room = room;
+    }
+
+    getBAC() {
+        return this.bacs;
+    }
+    setBAC(bacs) {
+        this.bacs = bacs;
     }
 }
