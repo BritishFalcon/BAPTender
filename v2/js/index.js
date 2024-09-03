@@ -16,7 +16,7 @@ function generateRandomColour() {
 }
 
 let me, drinks
-let users = {}
+let userBACs = {}
 let socket
 let colourmap = {}
 let timeLabels = []
@@ -57,6 +57,25 @@ function getOrSetUserInformation() {
 
         //TODO initialise connection to WS server
     }
+    document.getElementById("addDrink").addEventListener("click", function(e) {
+        e.preventDefault()
+        let volume = parseFloat(document.getElementById("volume").value)
+        let strength = parseFloat(document.getElementById("strength").value)
+        let drink = {
+            "volume": volume,
+            "strength": strength,
+            "name": me.name,
+            "weight": parseFloat(me.weight),
+            "sex": me.sex,
+            "bac": me.bac || 0
+        }
+
+        let payload = {
+            cmd: "new drink",
+            data: drink
+        }
+        socket.send(JSON.stringify(payload));
+    })
 }
 
 function initPage() {
@@ -70,8 +89,8 @@ function initPage() {
             //console.warn(jsonData)
             for (let i = 0; i < jsonData.length; i++) {
                 if (jsonData[i].cmd === "updateBAC") {
-                    let now = moment().format('YYYY-MM-DDTHH:mm:ss');  // This is in ISO 8601 format
-                    timeLabels.push(now);
+                    let now = moment().format('YYYY-MM-DDTHH:mm:ss');
+                    timeLabels.push(now);  // This is in ISO 8601 format
                     let data = jsonData[i].data;
                     let entries = Object.entries(data);
                     entries.sort((a, b) => b[1] - a[1]);
@@ -80,6 +99,20 @@ function initPage() {
                     let leaderboard = document.getElementById("leaderboard");
                     leaderboard.innerHTML = "";
                     for (const [key, value] of Object.entries(sortedData)) {
+                        if (!userBACs[key]) {
+                            userBACs[key] = [];
+                        }
+                        userBACs[key].push(value);
+
+                        if (userBACs[key].length < timeLabels.length) {
+                            let paddedArray = Array(timeLabels.length).fill(null);
+                            let startIndex = timeLabels.length - userBACs[key].length;
+                            for (let i = 0; i < userBACs[key].length; i++) {
+                                paddedArray[startIndex + i] = userBACs[key][i];
+                            }
+                            userBACs[key] = paddedArray;
+                        }
+
                         let dataset = myChart.data.datasets.find(dataset => dataset.label === key);
                         if (!dataset) {
                             if (!colourmap[key]) {
@@ -87,7 +120,7 @@ function initPage() {
                             }
                             const newDataset = {
                                 label: key,
-                                data: timeLabels.map((time, index) => ({x: time, y: value})),
+                                data: timeLabels.map((time, index) => ({x: time, y: userBACs[key][index]})),
                                 borderColor: colourmap[key],
                                 fill: false,
                                 pointRadius: 0
@@ -95,12 +128,11 @@ function initPage() {
 
                             myChart.data.datasets.push(newDataset);
                         } else {
-                            dataset.data = timeLabels.map((time, index) => ({x: time, y: value}))
+                            dataset.data = timeLabels.map((time, index) => ({x: time, y: userBACs[key][index]}))
                         }
 
                         myChart.update()
 
-                        users[key] = value;
                         let row = document.createElement("div")
                         row.className = "row";
                         let user_col = document.createElement("div");
@@ -117,7 +149,7 @@ function initPage() {
                             row.style.backgroundColor = "#ffc107";
                             row.style.color = "#333";
                             let rows = document.querySelectorAll(".table tbody tr");
-
+                            me.bac = value
                             // Loop through each row to find the appropriate BAC range
                             for (let row of rows) {
                                 let bacCell = row.cells[0].innerText;
