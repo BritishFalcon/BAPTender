@@ -19,17 +19,19 @@ var collection *mongo.Collection
 type User struct {
 	ID     primitive.ObjectID `bson:"_id,omitempty"`
 	Name   string             `bson:"name"`
-	Weight float64            `bson:"weight"`
+	Weight int                `bson:"weight"`
 	Sex    string             `bson:"sex"`
 	Room   string             `bson:"room"`
+	BAC    float64            `bson:"bac"`
 }
 
-func AddUser(name string, weight int, sex string, room string) error {
+func AddUser(name string, weight int, sex string, room string, bac float64) error {
 	_, err := collection.InsertOne(context.Background(), bson.D{
 		{"name", name},
 		{"weight", weight},
 		{"sex", sex},
 		{"room", room},
+		{"bac", bac},
 	})
 	if err != nil {
 		return fmt.Errorf("could not insert user: %w", err)
