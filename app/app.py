@@ -108,12 +108,12 @@ def index():
     if delete_cookies:
         for cookie in request.cookies:
             flask.make_response().set_cookie(cookie, expires=0)
-    return render_template("extra.html")
+    return render_template("templates/extra.html")
 
 
 @app.route('/graph')
 def data():
-    return render_template("graph.html")
+    return render_template("templates/graph.html")
 
 
 @socketio.on('remove_last_drink')

@@ -1,0 +1,22 @@
+version: '3'
+services:
+  app:
+    build: ./app
+    links:
+    - db
+    ports:
+    - "6969:6969"
+    depends_on:
+    - db
+    restart: always
+
+  db:
+    image: mysql:5.7
+    ports:
+    - "32000:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data:/var/lib/mysql
+    restart: always
