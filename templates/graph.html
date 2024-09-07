@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultra Sophisticated Template</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+        }
+        #graph-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 5px;
+        }
+        #leaderboard-container {
+            width: 360px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .leaderboard-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0; /* Increased padding for wider rows */
+            border-bottom: 1px solid #555;
+        }
+
+        #leaderboard .col {
+            flex-grow: 1;
+            padding: 0 10px; /* Add some padding between columns */
+            min-width: 0; /* Prevent text overflow */
+            white-space: nowrap; /* Prevent wrapping by default */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Add ellipsis if text overflows */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #leaderboard .col.long-text {
+            white-space: normal; /* Allow text to wrap for longer content */
+            word-wrap: break-word; /* Ensure long text wraps within the row */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #myChart {
+            max-width: 100%;
+            height: calc(100vh - 40px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="leaderboard-container">
+        <h1>Leaderboard</h1>
+        <div id="leaderboard">
+            <div class="leaderboard-row">
+                <span>User1</span>
+                <span>0.08</span>
+            </div>
+            <div class="leaderboard-row">
+                <span>User2</span>
+                <span>0.05</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="graph-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+    <script>
+
+        function generateRandomColor() {
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
+          return `rgba(${r}, ${g}, ${b}, 1)`;
+        }
+
+        let users;
+        let drinks;
+        let colormap = {};
+
+        function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
+            const metabolismRate = 0.017;  // 0.017 g/100mL/hour
+            const widmarkFactor = (gender=='male') ? 0.58 : 0.49;
+            const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+
+            let timeLabels = [];  // To store the time labels for the graph
+            let bacValues = [];   // To store the BAC values for the graph
+
+            let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
+            let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+
+            for (const [volume, strength, time] of drinks) {
+                // Calculate the time elapsed since the first drink (in hours)
+                const timeElapsed = (time - earliestTime) / 3600;
+
+                let old_bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed)
+                if (old_bac < 0) old_bac = 0;  // BAC can't be negative
+                timeLabels.push(new Date(time * 1000));
+                bacValues.push(old_bac);
+
+                // Calculate the alcohol in the current drink
+                const alcoholInGrams = volume * strength * 0.789;  // 0.789 g/cm^3 is the density of ethanol
+                totalAlcohol += alcoholInGrams;
+
+                // Calculate BAC at this point
+                let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed)
+                if (bac <= 0) bac = 0;  // BAC can't be negative
+
+                // Add time and BAC to the lists
+                const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
+                timeLabels.push(timeLabel);
+                bacValues.push(bac);
+            }
+
+            // Add a final point to the graph to show the BAC at current time
+            const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
+            let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
+            if (bac < 0) {
+                socket.emit('remove_user', username);
+                return { timeLabels: [], bacValues: [] };
+            }
+
+            timeLabels.push(new Date());
+            bacValues.push(bac);
+
+            return { timeLabels, bacValues };
+        }
+
+        function autoUpdate() {
+          // Iterate through user data to populate or update datasets
+          for (const username in drinks) {
+            const user_drinks = drinks[username];
+            const weight = users[username][0];
+            const gender = users[username][1];
+
+            const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
+            if (timeLabels.length == 0) {
+                let dataset = myChart.data.datasets.find(d => d.label === username);
+                if (dataset) {
+                    myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
+                }
+                console.log("Deleted user " + username + " from the graph")
+                continue;
+            };  // Skip if BAC is negative
+
+            // Check if dataset for user already exists
+            let dataset = myChart.data.datasets.find(d => d.label === username);
+
+            if (!dataset) {
+              // Create new dataset if not exists
+              if (!colormap[username]) {
+                colormap[username] = generateRandomColor(); // Your color function
+              }
+
+              const newDataset = {
+                label: username,
+                data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
+                borderColor: colormap[username],
+                fill: false,
+              };
+
+              myChart.data.datasets.push(newDataset);
+            } else {
+              // Update existing dataset
+              dataset.data = timeLabels.map((time, index) => ({ x: time, y: bacValues[index] }));
+            }
+          }
+
+          // Finally, update the chart
+          myChart.update();
+
+           // Update the leaderboard
+           let leaderboard = document.getElementById("leaderboard");
+           leaderboard.innerHTML = "";
+           let sorted_users = myChart.data.datasets.map(dataset => dataset.label).sort((a, b) => (myChart.data.datasets.find(ds => ds.label === b).data.slice(-1)[0] || 0) - (myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0] || 0));
+
+           let header_row = document.createElement("div");
+           header_row.className = "row";
+           let user_header = document.createElement("div");
+           user_header.className = "col";
+           user_header.innerHTML = "User";
+           let bac_header = document.createElement("div");
+           bac_header.className = "col";
+           bac_header.innerHTML = "BAC";
+           let sobriety_header = document.createElement("div");
+           sobriety_header.className = "col";
+           sobriety_header.innerHTML = "Sobriety";
+
+           header_row.appendChild(user_header);
+           header_row.appendChild(bac_header);
+           header_row.appendChild(sobriety_header);
+           leaderboard.appendChild(header_row);
+
+           for (const username of sorted_users) {
+               // Take BAC from the chart
+               let bac = myChart.data.datasets.find(dataset => dataset.label === username).data.slice(-1)[0].y;
+               let row = document.createElement("div");
+               row.className = "row";
+               let user_col = document.createElement("div");
+               user_col.className = "col";
+               user_col.innerHTML = username;
+               let bac_col = document.createElement("div");
+               bac_col.className = "col";
+               bac_col.innerHTML = bac.toFixed(3);
+               let sobriety_col = document.createElement("div");
+               sobriety_col.className = "col";
+               let hours_to_sobriety = (bac / 0.017);
+               let current_time = new Date();
+               let sobriety_time = new Date(current_time.getTime() + hours_to_sobriety * 60 * 60 * 1000);
+               sobriety_col.innerHTML = sobriety_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+               row.appendChild(user_col);
+               row.appendChild(bac_col);
+               row.appendChild(sobriety_col);
+               leaderboard.appendChild(row);
+           }
+
+           // Convert the NodeList to an array
+           let rows = Array.from(leaderboard.children);
+
+           // Sort the array based on the BAC value
+           rows.sort((a, b) => {
+             let bacA = parseFloat(a.querySelector('.col:last-child').innerHTML);
+             let bacB = parseFloat(b.querySelector('.col:last-child').innerHTML);
+             return bacB - bacA; // Sort in descending order
+           });
+
+           // Remove all existing rows from the leaderboard
+           while (leaderboard.firstChild) {
+             leaderboard.removeChild(leaderboard.firstChild);
+           }
+
+           // Re-append the sorted rows
+           rows.forEach(row => leaderboard.appendChild(row));
+        }
+
+
+        // Chart initialization
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: []
+          },
+          options: {
+            scales: {
+              x: {
+                type: 'time',
+                  time: {
+                    unit: 'minute'
+                  },
+                title: {
+                  display: true,
+                  text: 'Time'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'BAC'
+                },
+                min: 0,
+              }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+          }
+        });
+
+
+        // Socket.IO setup
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            socket.emit('get_data');
+        });
+
+        socket.on('update_data', function(result) {
+            drinks = result[0];
+            users = result[1];
+        });
+
+        // Auto update every second
+        setInterval(autoUpdate, 1000);
+
+    </script>
+
+</body>
+</html>
