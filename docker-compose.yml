@@ -1,3 +1,4 @@
+version: '3'
 services:
   app:
     build: ./app
@@ -15,5 +16,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
 
     volumes:
-      - $PWD/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db:/docker-entrypoint-initdb.d/
+      - ./data:/var/lib/mysql
     restart: always
