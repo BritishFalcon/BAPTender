@@ -15,6 +15,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
 
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./data:/var/lib/mysql
+      - $PWD/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - $PWD/data:/var/lib/mysql
     restart: always
