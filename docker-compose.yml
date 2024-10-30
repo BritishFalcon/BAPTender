@@ -16,5 +16,4 @@ services:
 
     volumes:
       - $PWD/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - $PWD/data:/var/lib/mysql
     restart: always
