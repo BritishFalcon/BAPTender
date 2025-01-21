@@ -128,4 +128,4 @@ def remove_last_drink(username):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=6969, ssl_context=('baptender.com.pem', 'baptender.com.key'))
+    app.run(debug=True, host='0.0.0.0', port=6969)

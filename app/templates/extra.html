@@ -1,544 +1,1029 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Ultra Sophisticated Template</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f4f4;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-            color: #333;
-        }
-        .container {
-            margin-top: 50px;
-        }
-        .card {
-            border-radius: 15px;
-        }
-        .card-header {
-            background-color: #333;
-            color: #fff;
-        }
-        .btn-primary {
-            background-color: #007bff;
-        }
-        #image {
-            background-image: url('https://wallpapers.com/images/featured-full/bar-c5vakob55hk4alvi.jpg');
-            background-size: cover;
-            background-position: center;
-            height: 200px;
-        }
-        #userFormDiv {
-            max-width: 400px;
-            margin: auto;
-            background: #fafafa;
-            padding: 30px;  /* More padding for the form div */
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px 0px grey;
-            margin-top: 40px;
-        }
+  <meta charset="UTF-8">
+  <title>BAPTender - A fun, safety-focused group alcohol tracker</title>
 
-        .form-group {
-            margin-bottom: 30px;  /* More bottom margin for each form-group */
-        }
+  <!-- SEO Meta Description -->
+  <meta name="description" content="BAPTender is a fun-to-use alcohol tracker designed to promote drinking awareness and safety. Monitor each other's drinking habits in a group to ensure nobody is being unsafe.">
 
-        .form-control {
-            max-width: 300px;  /* Max width for input boxes */
-            margin: auto;  /* Centering the input boxes */
-        }
+  <!-- Mobile-friendly viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .center-label {
-            display: block;
-            text-align: center;
-        }
+  <!-- Bootstrap & Core Libraries -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-        .btn-primary {
-            display: block;
-            margin: auto;
-        }
+  <!-- Custom Fonts for High-Tech Vibe -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap">
 
-    </style>
+  <!-- Animate.css for Animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- Chart.js for Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+  <!-- Socket.IO for Real-Time Communication -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+  <!-- jQuery and Popper.js for Bootstrap -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Particles.js for Animated Background -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+  <!-- Custom Chaotic CSS -->
+  <style>
+    :root {
+      /* OG Theme Variables */
+      --bg-color-og: #f8f9fa;
+      --text-color-og: #212529;
+      --primary-color-og: #007bff;
+      --accent-color-og: #6c757d;
+      --card-bg-og: #ffffff;
+
+      /* Default Theme Variables (OG Theme) */
+      --bg-color: var(--bg-color-og);
+      --text-color: var(--text-color-og);
+      --primary-color: var(--primary-color-og);
+      --accent-color: var(--accent-color-og);
+      --card-bg: var(--card-bg-og);
+    }
+
+    /* Body Styling */
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Orbitron', sans-serif;
+      transition: all 0.6s ease-in-out;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Particle Background */
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      top: 0;
+      left: 0;
+    }
+
+    /* Glitch Effect for Title */
+    .glitch {
+      position: relative;
+      font-size: 3rem;
+      text-transform: uppercase;
+      margin-top: 20px;
+      display: inline-block;
+      cursor: pointer; /* Indicate it's clickable */
+      animation: glitch-skew 1.5s infinite linear alternate-reverse;
+    }
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+    }
+    .glitch::before {
+      animation: glitch-anim 3s infinite linear alternate-reverse;
+      top: -2px;
+      left: 2px;
+      color: var(--accent-color);
+      overflow: hidden;
+      clip: rect(0, 900px, 0, 0);
+    }
+    .glitch::after {
+      animation: glitch-anim2 2.5s infinite linear alternate-reverse;
+      top: 2px;
+      left: -2px;
+      color: var(--primary-color);
+      overflow: hidden;
+      clip: rect(0, 900px, 0, 0);
+    }
+    @keyframes glitch-anim {
+      0% { clip: rect(44px, 9999px, 67px, 0); }
+      5% { clip: rect(59px, 9999px, 91px, 0); }
+      10% { clip: rect(34px, 9999px, 98px, 0); }
+      100% { clip: rect(12px, 9999px, 33px, 0); }
+    }
+
+    @keyframes glitch-anim2 {
+      0% { clip: rect(51px, 9999px, 110px, 0); }
+      5% { clip: rect(80px, 9999px, 75px, 0); }
+      10% { clip: rect(95px, 9999px, 28px, 0); }
+      100% { clip: rect(10px, 9999px, 44px, 0); }
+    }
+
+    @keyframes glitch-skew {
+      0% { transform: skew(0deg); }
+      100% { transform: skew(10deg); }
+    }
+
+    /* Card Styling */
+    .card {
+      background-color: var(--card-bg);
+      backdrop-filter: blur(5px);
+      border: 2px solid var(--accent-color);
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 15px var(--accent-color);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card-header {
+      background-color: transparent;
+      border-bottom: 1px solid var(--accent-color);
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+
+    /* Additional Theme Classes */
+    .theme-og {
+      --bg-color: var(--bg-color-og);
+      --text-color: var(--text-color-og);
+      --primary-color: var(--primary-color-og);
+      --accent-color: var(--accent-color-og);
+      --card-bg: var(--card-bg-og);
+    }
+
+    .theme-dark {
+      --bg-color: #141414;
+      --text-color: #fafafa;
+      --primary-color: #90baf9;
+      --accent-color: #6effd5;
+      --card-bg: rgba(255, 255, 255, 0.08);
+    }
+
+    .theme-cyber {
+      --bg-color: #000000;
+      --text-color: #00ff9c;
+      --primary-color: #00b3ff;
+      --accent-color: #ff00e0;
+      --card-bg: rgba(0, 0, 0, 0.5);
+    }
+
+    .theme-neon {
+      --bg-color: #0f0f0f;
+      --text-color: #ffff00;
+      --primary-color: #ff00e6;
+      --accent-color: #00ffd2;
+      --card-bg: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Center Text Adjustments */
+    .text-center {
+      margin-top: 10px;
+    }
+
+    /* Container and Form Spacing */
+    .container, #userFormDiv {
+      margin-top: 20px;
+    }
+
+    /* Optimize Sign-Up Form Size and Position */
+    #userFormDiv {
+      max-width: 400px;
+      margin: 40px auto 20px auto; /* Added top margin to lower the form */
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px 0px grey;
+    }
+
+    /* Improved Table Styling for Readability */
+    table {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.1); /* Slightly opaque background */
+      color: var(--text-color); /* Ensure text color matches theme */
+    }
+    th, td {
+      color: var(--text-color);
+      word-break: break-word; /* Prevent text overflow */
+    }
+    thead {
+      background-color: rgba(0, 0, 0, 0.3); /* Darker header for contrast */
+    }
+    tbody tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.05); /* Subtle striping */
+    }
+
+    /* Responsive Table */
+    @media (max-width: 576px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      tr {
+        margin-bottom: 1rem;
+      }
+
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      td::before {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      /* Label the data */
+      td:nth-of-type(1)::before { content: "BAC (%)"; }
+      td:nth-of-type(2)::before { content: "Behavior"; }
+      td:nth-of-type(3)::before { content: "Impairment"; }
+      td:nth-of-type(4)::before { content: "Translation"; }
+    }
+
+    /* Feedback Message Styling */
+    #feedbackMessage {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 10000;
+      min-width: 250px;
+      padding: 15px;
+      border-radius: 5px;
+      color: #fff;
+      display: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* Additional Animations */
+    .animate__animated.animate__fadeInUp {
+      animation-duration: 1s;
+    }
+    .animate__animated.animate__zoomIn {
+      animation-duration: 1s;
+    }
+
+    /* Button Hover Effects */
+    .btn-primary:hover {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+
+    .btn-danger:hover {
+      background-color: #c82333;
+      border-color: #bd2130;
+    }
+  </style>
 </head>
+
 <body>
-    <!-- Main Title and Subtitle, Centered -->
-    <div class="text-center">
-      <h1>BAPTender</h1>
-      <small class="text-muted">This was a stupid idea.</small>
+  <!-- Particle Background -->
+  <div id="particles-js"></div>
+
+  <!-- Feedback Message Container -->
+  <div id="feedbackMessage"></div>
+
+  <!-- Main Title and Subtitle with Glitch Effect (Theme Toggle) -->
+  <div class="text-center">
+    <h1 class="glitch" data-text="BAPTender!" id="themeToggle">
+      BAPTender!
+    </h1>
+    <div>
+      <small class="text-muted" style="font-family: 'VT323', monospace;">
+        Born to be *questionable.*
+      </small>
+    </div>
+  </div>
+
+  <!-- Sign-Up Form Section -->
+  <div id="userFormDiv" class="animate__animated animate__fadeInUp" style="display: none;">
+    <h1 style="font-family: 'Share Tech Mono';">Sign Up, Ya Drunken Meat Popsicle</h1>
+    <form id="userForm" class="mt-3">
+      <div class="form-group">
+        <label for="username">Username (like it matters)</label>
+        <input type="text" id="username" class="form-control" placeholder="YeetMaster3000" required>
+      </div>
+      <div class="form-group">
+        <label for="weight">Weight (kg, or something close)</label>
+        <input type="number" id="weight" class="form-control" placeholder="42, 69, etc." required>
+      </div>
+      <div class="form-group">
+        <label>Gender (pick your poison... I mean pronouns)</label>
+        <select id="gender" class="form-control">
+          <option>Male</option>
+          <option>Female</option>
+          <option>Non-binary</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">
+        Submit (To The Chaos)
+      </button>
+    </form>
+  </div>
+
+  <!-- Main Content Section -->
+  <div class="container animate__animated animate__fadeIn" style="display: none;" id="main">
+    <div class="row">
+      <!-- Graph Section -->
+      <div class="col-md-6">
+        <div class="card animate__animated animate__zoomIn">
+          <div class="card-header">Graph of Shame</div>
+          <div class="card-body" id="graph">
+            <canvas id="myChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Standings Section -->
+      <div class="col-md-6">
+        <div class="card animate__animated animate__zoomIn">
+          <div class="card-header">Standings (A.K.A. Future Blackouts)</div>
+          <div class="card-body" id="leaderboard">
+            <!-- Leaderboard will be dynamically populated -->
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="userFormDiv" style="display: none">
-      <h1>Sign Up, Buttercup 🌼</h1>
-      <form id="userForm">
-        <div class="form-group">
-          <label for="username">Username (because you need identity, even on the internet)</label>
-          <input type="text" id="username" class="form-control" placeholder="Bepsi Man" required>
-        </div>
-        <div class="form-group">
-          <label for="weight">Weight (in kg, because we're civilized)</label>
-          <input type="number" id="weight" class="form-control" placeholder="Don't lie, we won't judge... much" required>
-        </div>
-        <div class="form-group">
-          <label>Gender (or your approximation thereof)</label>
-          <select id="gender" class="form-control">
-            <option>Male</option>
-            <option>Female</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Submit for Judgment 🤖</button>
-      </form>
+    <!-- Drink Entry Form -->
+    <div class="row mt-4" id="entry">
+      <div class="col-md-12">
+        <form id="drinkForm">
+          <div class="form-group">
+            <label for="spinbox1">Volume (ml):</label>
+            <input type="number" class="form-control" id="spinbox1" required>
+          </div>
+          <div class="form-group">
+            <label for="spinbox2">Strength (%):</label>
+            <input type="number" class="form-control" id="spinbox2" step="0.1" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="addDrink">
+            Add Drink (You Lush)
+          </button>
+        </form>
+      </div>
     </div>
 
-    <div class="container" style="display: none" id="main">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">Graph</div>
-                    <div class="card-body" id="graph">
-                        <canvas id="myChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">Standings</div>
-                    <div class="card-body" id="leaderboard">
-                        <div id="leaderboard"></div>
-                    </div>
-                </div>
-            </div>
+    <!-- Information Table -->
+    <div class="card mt-4 animate__animated animate__fadeInUp">
+      <div class="card-header">Information Table</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-bordered">
+            <thead>
+              <tr>
+                <th scope="col">BAC (%)</th>
+                <th scope="col">Behavior</th>
+                <th scope="col">Impairment</th>
+                <th scope="col">Translation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>0.001–0.029</td>
+                <td>Seems normal</td>
+                <td>Minimal</td>
+                <td>Still unimpressive at parties</td>
+              </tr>
+              <tr>
+                <td>0.030–0.059</td>
+                <td>Mild euphoria<br>Relaxation<br>Joyousness<br>Talkativeness<br>Decreased inhibition</td>
+                <td>Concentration</td>
+                <td>Starts to appreciate Nickelback<br>Forgets the name of their first pet</td>
+              </tr>
+              <tr>
+                <td>0.060–0.099</td>
+                <td>Blunted feelings<br>Reduced sensitivity to pain<br>Euphoria<br>Disinhibition<br>Extraversion</td>
+                <td>Reasoning<br>Depth perception<br>Peripheral vision<br>Glare recovery</td>
+                <td>Thinks they can dance<br>Buys Bitcoin<br>Loses at tic-tac-toe<br>Struggles with velcro shoes</td>
+              </tr>
+              <tr>
+                <td>0.100–0.199</td>
+                <td>Over-expression<br>Boisterousness<br>Possibility of nausea and vomiting</td>
+                <td>Reflexes<br>Reaction time<br>Gross motor control<br>Staggering<br>Slurred speech<br>Temporary erectile dysfunction</td>
+                <td>Attempts to moonwalk<br>Thinks they can speak fluent Klingon<br>Can't differentiate left from right (becomes Sol)<br>Bumps into 'invisible' walls</td>
+              </tr>
+              <tr>
+                <td>0.200–0.299</td>
+                <td>Nausea<br>Vomiting<br>Emotional swings<br>Anger or sadness<br>Partial loss of understanding<br>Impaired sensations<br>Decreased libido<br>Possibility of stupor</td>
+                <td>Severe motor impairment<br>Loss of consciousness<br>Memory blackout</td>
+                <td>Starts a podcast in the bathroom<br>Joins a cult, accidentally<br>Forgets how to swallow<br>Laughs at their own jokes</td>
+              </tr>
+              <tr>
+                <td>0.300–0.399</td>
+                <td>Stupor<br>Central nervous system depression<br>Loss of understanding<br>Lapses in and out of consciousness<br>Low possibility of death</td>
+                <td>Bladder function<br>Breathing<br>Dysequilibrium<br>Heart rate</td>
+                <td>Tries to invent a new color<br>Believes they can talk to plants<br>Can't recognize own reflection<br>Thinks they're on a reality show</td>
+              </tr>
+              <tr>
+                <td>0.400–0.500</td>
+                <td>Severe central nervous system depression<br>Coma<br>Possibility of death</td>
+                <td>Breathing<br>Heart rate<br>Positional alcohol nystagmus</td>
+                <td>Attempts time travel with a cardboard box<br>Writes love letters to appliances<br>Confuses hands for food<br>Argues with a mop</td>
+              </tr>
+              <tr>
+                <td>>0.50</td>
+                <td>High possibility of death</td>
+                <td>Lack of photosynthesis</td>
+                <td>Appoints self as Emperor of the Galaxy<br>Forgets how to breathe, possibly</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <div class="row mt-4" id="entry">
-            <div class="col-md-12">
-                <form>
-                    <div class="form-group">
-                        <label class="center-label" for="spinbox1">Volume (ml):</label>
-                        <input type="number" class="form-control" id="spinbox1", min=25, max=500>
-                    </div>
-                    <div class="form-group">
-                        <label class="center-label" for="spinbox2">Strength (%):</label>
-                        <input type="number" class="form-control" id="spinbox2", min=1, max="75">
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="addDrink">Add Drink</button>
-                </form>
-            </div>
-        </div>
-        <div class="card mt-4">
-            <div class="card-header">Information Table</div>
-            <div class="card-body">
-                <table class="table table-sm table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th scope="col">BAC (%)</th>
-                            <th scope="col">Behavior</th>
-                            <th scope="col">Impairment</th>
-                            <th scope="col">GPT-4's Translation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>0.001–0.029</td>
-                            <td>Average individual appears normal</td>
-                            <td>Subtle effects that can be detected with special tests</td>
-                            <td>Believes they are a trivia champion<br>Can't spell 'Mississippi'</td>
-                        </tr>
-                        <tr>
-                            <td>0.030–0.059</td>
-                            <td>Mild euphoria<br>Relaxation<br>Joyousness<br>Talkativeness<br>Decreased inhibition</td>
-                            <td>Concentration</td>
-                            <td>Starts to appreciate Nickelback<br>Forgets the name of their first pet</td>
-                        </tr>
-                        <tr>
-                            <td>0.060–0.099</td>
-                            <td>Blunted feelings<br>Reduced sensitivity to pain<br>Euphoria<br>Disinhibition<br>Extraversion</td>
-                            <td>Reasoning<br>Depth perception<br>Peripheral vision<br>Glare recovery</td>
-                            <td>Thinks they can dance<br>Buys Bitcoin<br>Loses at tic-tac-toe<br>Struggles with velcro shoes</td>
-
-                        </tr>
-                        <tr>
-                            <td>0.100–0.199</td>
-                            <td>Over-expression<br>Boisterousness<br>Possibility of nausea and vomiting</td>
-                            <td>Reflexes<br>Reaction time<br>Gross motor control<br>Staggering<br>Slurred speech<br>Temporary erectile dysfunction</td>
-                            <td>Attempts to moonwalk<br>Thinks they can speak fluent Klingon<br>Can't differentiate left from right (becomes Sol)<br>Bumps into 'invisible' walls</td>
-
-                        </tr>
-                        <tr>
-                            <td>0.200–0.299</td>
-                            <td>Nausea<br>Vomiting<br>Emotional swings<br>Anger or sadness<br>Partial loss of understanding<br>Impaired sensations<br>Decreased libido<br>Possibility of stupor</td>
-                            <td>Severe motor impairment<br>Loss of consciousness<br>Memory blackout</td>
-                            <td>Starts a podcast in the bathroom<br>Joins a cult, accidentally<br>Forgets how to swallow<br>Laughs at their own jokes</td>
-
-                        </tr>
-                        <tr>
-                            <td>0.300–0.399</td>
-                            <td>Stupor<br>Central nervous system depression<br>Loss of understanding<br>Lapses in and out of consciousness<br>Low possibility of death</td>
-                            <td>Bladder function<br>Breathing<br>Dysequilibrium<br>Heart rate</td>
-                            <td>Tries to invent a new color<br>Believes they can talk to plants<br>Can't recognize own reflection<br>Thinks they're on a reality show</td>
-
-                        </tr>
-                        <tr>
-                            <td>0.400–0.500</td>
-                            <td>Severe central nervous system depression<br>Coma<br>Possibility of death</td>
-                            <td>Breathing<br>Heart rate<br>Positional alcohol nystagmus</td>
-                            <td>Attempts time travel with a cardboard box<br>Writes love letters to appliances<br>Confuses hands for food<br>Argues with a mop</td>
-
-                        </tr>
-                        <tr>
-                            <td>>0.50</td>
-                            <td>High possibility of death</td>
-                            <td>Lack of photosynthesis</td>
-                            <td>Appoints self as Emperor of the Galaxy<br>Forgets how to breathe, possibly</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div>
-            <button type="submit" class="btn btn-primary" id="removeDrink">Remove Last Drink</button>
-        </div>
+      </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <!-- Remove Last Drink Button -->
+    <div>
+      <button type="button" class="btn btn-danger btn-block" id="removeDrink">
+        Remove Last Drink (Coward's Way Out)
+      </button>
+    </div>
+  </div>
 
-    <script>
-        function getCookie(name) {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop().split(';').shift();
-        }
+  <!-- JavaScript Section -->
+  <script>
+    // ==================== SOCKET.IO SETUP ====================
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
 
-        function generateRandomColor() {
-          const r = Math.floor(Math.random() * 256);
-          const g = Math.floor(Math.random() * 256);
-          const b = Math.floor(Math.random() * 256);
-          return `rgba(${r}, ${g}, ${b}, 1)`;
-        }
+    // ==================== GLOBAL VARIABLES ====================
+    let loaded = false;
+    let my_username;
+    let my_weight;
+    let my_gender;
+    let users = {};
+    let drinks = {};
+    let colormap = {};
+    let bypass = false;  // Set to true to bypass the login form
 
-        let loaded = false;
-        let my_username;
-        let my_weight;
-        let my_gender;
-        let users;
-        let drinks;
-        let colormap = {};
-        let bypass = false;  // Set to true to bypass the login form
+    // ==================== HELPER FUNCTIONS ====================
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    }
 
-        if (document.cookie.includes("username=") & !bypass) {
-            my_username = getCookie('username');
-            my_weight = getCookie('weight');
-            my_gender = getCookie('gender');
-            loaded = true;
-            document.getElementById("userFormDiv").style.display = "none";  // Hide the form
-            document.getElementById("main").style.display = "block";  // Show the main page
+    function generateRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgba(${r}, ${g}, ${b}, 1)`;
+    }
 
+    // ==================== BAC CALCULATION ====================
+    function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
+      const metabolismRate = 0.017;  // 0.017 g/100mL/hour
+      const widmarkFactor = (gender === 'Male') ? 0.58 : 0.49;
+      const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+
+      let timeLabels = [];  // To store the time labels for the graph
+      let bacValues = [];   // To store the BAC values for the graph
+
+      let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
+      if (drinks.length === 0) return { timeLabels: [], bacValues: [] };
+      let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+
+      for (const [volume, strength, time] of drinks) {
+        // Calculate the time elapsed since the first drink (in hours)
+        const timeElapsed = (time - earliestTime) / 3600;
+
+        let old_bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
+        if (old_bac < 0) old_bac = 0;  // BAC can't be negative
+        timeLabels.push(new Date(time * 1000));
+        bacValues.push(old_bac);
+
+        // Calculate the alcohol in the current drink
+        const alcoholInGrams = (volume * (strength / 100)) * 0.789;  // 0.789 g/cm^3 is the density of ethanol
+        totalAlcohol += alcoholInGrams;
+
+        // Calculate BAC at this point
+        let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
+        if (bac <= 0) bac = 0;  // BAC can't be negative
+
+        // Add time and BAC to the lists
+        const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
+        timeLabels.push(timeLabel);
+        bacValues.push(bac);
+      }
+
+      // Add a final point to the graph to show the BAC at current time
+      const currentTime = Date.now() / 1000;
+      const timeElapsed = (currentTime - earliestTime) / 3600;
+      let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
+      if (bac < 0) {
+        socket.emit('remove_user', my_username);
+        return { timeLabels: [], bacValues: [] };
+      }
+
+      timeLabels.push(new Date(currentTime * 1000));
+      bacValues.push(bac);
+
+      return { timeLabels, bacValues };
+    }
+
+    // ==================== FETCH DATA ====================
+    function fetch_data() {
+      drinks = {};  // Reset drinks
+      // Assuming 'drinks' and 'users' are populated from the server via Socket.IO
+      for (const user in drinks) {
+        drinks[user] = drinks[user].sort((a, b) => a[2] - b[2]);  // Sort drinks by time
+      }
+    }
+
+    // ==================== AUTO UPDATE FUNCTION ====================
+    function autoUpdate() {
+      // Iterate through user data to populate or update datasets
+      for (const username in drinks) {
+        const user_drinks = drinks[username];
+        const weight = users[username][0];
+        const gender = users[username][1];
+
+        const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
+        if (timeLabels.length === 0) {
+          let dataset = myChart.data.datasets.find(d => d.label === username);
+          if (dataset) {
+            myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
+          }
+          console.log("Deleted user " + username + " from the graph");
+          continue;
+        }  // Skip if BAC is negative
+
+        // Check if dataset for user already exists
+        let dataset = myChart.data.datasets.find(d => d.label === username);
+
+        if (!dataset) {
+          // Create new dataset if not exists
+          if (!colormap[username]) {
+            colormap[username] = generateRandomColor(); // Your color function
+          }
+
+          const newDataset = {
+            label: username,
+            data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
+            borderColor: colormap[username],
+            fill: false,
+            tension: 0.4, // Smoother lines
+            pointRadius: 2,
+            borderWidth: 2
+          };
+
+          myChart.data.datasets.push(newDataset);
         } else {
-            // Show the form
-            document.getElementById("userFormDiv").style.display = "block";
-            document.getElementById("userForm").addEventListener("submit", function(e) {
-                e.preventDefault();  // Prevent the form from refreshing the page
-
-                // Save form inputs as cookies
-                document.cookie = "username=" + document.getElementById("username").value;
-                document.cookie = "weight=" + document.getElementById("weight").value;
-                document.cookie = "gender=" + document.getElementById("gender").value;
-                my_username = getCookie('username');
-                my_weight = getCookie('weight');
-                my_gender = getCookie('gender');
-                loaded = true;
-                document.getElementById("userFormDiv").style.display = "none";  // Hide the form
-                document.getElementById("main").style.display = "block";  // Show the main page
-
-                // Get the users' drinks from the server
-                drinks = socket.emit('new_user', [my_username, my_weight, my_gender]);
-                socket.emit('get_data')
-                autoUpdate()
-            });
+          // Update existing dataset
+          dataset.data = timeLabels.map((time, index) => ({ x: time, y: bacValues[index] }));
         }
+      }
 
-        function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
-            const metabolismRate = 0.017;  // 0.017 g/100mL/hour
-            const widmarkFactor = (gender=='male') ? 0.58 : 0.49;
-            const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+      // Finally, update the chart
+      myChart.update();
 
-            let timeLabels = [];  // To store the time labels for the graph
-            let bacValues = [];   // To store the BAC values for the graph
+      // Update the leaderboard
+      let leaderboard = document.getElementById("leaderboard");
+      leaderboard.innerHTML = "";
+      let sorted_users = myChart.data.datasets.map(dataset => dataset.label).sort((a, b) => {
+        let bacB = myChart.data.datasets.find(ds => ds.label === b).data.slice(-1)[0].y || 0;
+        let bacA = myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0].y || 0;
+        return bacB - bacA; // Sort in descending order
+      });
 
-            let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
-            let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+      // Create Header Row
+      let header_row = document.createElement("div");
+      header_row.className = "row font-weight-bold";
+      let user_header = document.createElement("div");
+      user_header.className = "col";
+      user_header.innerHTML = "User";
+      let bac_header = document.createElement("div");
+      bac_header.className = "col";
+      bac_header.innerHTML = "BAC";
+      let sobriety_header = document.createElement("div");
+      sobriety_header.className = "col";
+      sobriety_header.innerHTML = "Time of Sobriety";
 
-            for (const [volume, strength, time] of drinks) {
-                // Calculate the time elapsed since the first drink (in hours)
-                const timeElapsed = (time - earliestTime) / 3600;
+      header_row.appendChild(user_header);
+      header_row.appendChild(bac_header);
+      header_row.appendChild(sobriety_header);
+      leaderboard.appendChild(header_row);
 
-                let old_bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed)
-                if (old_bac < 0) old_bac = 0;  // BAC can't be negative
-                timeLabels.push(new Date(time * 1000));
-                bacValues.push(old_bac);
+      // Populate Leaderboard
+      for (const username of sorted_users) {
+        // Take BAC from the chart
+        let dataset = myChart.data.datasets.find(ds => ds.label === username);
+        if (!dataset) continue;
+        let bac = dataset.data.slice(-1)[0].y;
+        let row = document.createElement("div");
+        row.className = "row";
 
-                // Calculate the alcohol in the current drink
-                const alcoholInGrams = volume * strength * 0.789;  // 0.789 g/cm^3 is the density of ethanol
-                totalAlcohol += alcoholInGrams;
+        let user_col = document.createElement("div");
+        user_col.className = "col";
+        user_col.innerHTML = username;
 
-                // Calculate BAC at this point
-                let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed)
-                if (bac <= 0) bac = 0;  // BAC can't be negative
+        let bac_col = document.createElement("div");
+        bac_col.className = "col";
+        bac_col.innerHTML = bac.toFixed(3);
 
-                // Add time and BAC to the lists
-                const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
-                timeLabels.push(timeLabel);
-                bacValues.push(bac);
-            }
+        let sobriety_col = document.createElement("div");
+        sobriety_col.className = "col";
+        let hours_to_sobriety = (bac / 0.017);
+        let current_time = new Date();
+        let sobriety_time = new Date(current_time.getTime() + hours_to_sobriety * 60 * 60 * 1000);
+        sobriety_col.innerHTML = sobriety_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Add a final point to the graph to show the BAC at current time
-            const timeElapsed = (Date.now() / 1000 - earliestTime) / 3600;
-            let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-            if (bac < 0) {
-                socket.emit('remove_user', username);
-                return { timeLabels: [], bacValues: [] };
-            }
+        row.appendChild(user_col);
+        row.appendChild(bac_col);
+        row.appendChild(sobriety_col);
+        leaderboard.appendChild(row);
 
-            timeLabels.push(new Date());
-            bacValues.push(bac);
-
-            return { timeLabels, bacValues };
+        // Highlight the current user
+        if (username === my_username) {
+          // Make the row yellow
+          row.style.backgroundColor = "#ffc107";
+          row.style.color = "#333";
         }
+      }
+    }
 
-        function autoUpdate() {
-          // Iterate through user data to populate or update datasets
-          for (const username in drinks) {
-            const user_drinks = drinks[username];
-            const weight = users[username][0];
-            const gender = users[username][1];
-
-            const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
-            if (timeLabels.length == 0) {
-                let dataset = myChart.data.datasets.find(d => d.label === username);
-                if (dataset) {
-                    myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
-                }
-                console.log("Deleted user " + username + " from the graph")
-                continue;
-            };  // Skip if BAC is negative
-
-            // Check if dataset for user already exists
-            let dataset = myChart.data.datasets.find(d => d.label === username);
-
-            if (!dataset) {
-              // Create new dataset if not exists
-              if (!colormap[username]) {
-                colormap[username] = generateRandomColor(); // Your color function
-              }
-
-              const newDataset = {
-                label: username,
-                data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
-                borderColor: colormap[username],
-                fill: false,
-              };
-
-              myChart.data.datasets.push(newDataset);
-            } else {
-              // Update existing dataset
-              dataset.data = timeLabels.map((time, index) => ({ x: time, y: bacValues[index] }));
-            }
-          }
-
-          // Finally, update the chart
-          myChart.update();
-
-           // Update the leaderboard
-           let leaderboard = document.getElementById("leaderboard");
-           leaderboard.innerHTML = "";
-           let sorted_users = myChart.data.datasets.map(dataset => dataset.label).sort((a, b) => (myChart.data.datasets.find(ds => ds.label === b).data.slice(-1)[0] || 0) - (myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0] || 0));
-
-           let header_row = document.createElement("div");
-           header_row.className = "row";
-           let user_header = document.createElement("div");
-           user_header.className = "col";
-           user_header.innerHTML = "User";
-           let bac_header = document.createElement("div");
-           bac_header.className = "col";
-           bac_header.innerHTML = "BAC";
-           let sobriety_header = document.createElement("div");
-           sobriety_header.className = "col";
-           sobriety_header.innerHTML = "Time of Sobriety";
-
-           header_row.appendChild(user_header);
-           header_row.appendChild(bac_header);
-           header_row.appendChild(sobriety_header);
-           leaderboard.appendChild(header_row);
-
-           for (const username of sorted_users) {
-               // Take BAC from the chart
-               let bac = myChart.data.datasets.find(dataset => dataset.label === username).data.slice(-1)[0].y;
-               let row = document.createElement("div");
-               row.className = "row";
-               let user_col = document.createElement("div");
-               user_col.className = "col";
-               user_col.innerHTML = username;
-               let bac_col = document.createElement("div");
-               bac_col.className = "col";
-               bac_col.innerHTML = bac.toFixed(3);
-               let sobriety_col = document.createElement("div");
-               sobriety_col.className = "col";
-               let hours_to_sobriety = (bac / 0.017);
-               let current_time = new Date();
-               let sobriety_time = new Date(current_time.getTime() + hours_to_sobriety * 60 * 60 * 1000);
-               sobriety_col.innerHTML = sobriety_time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-               row.appendChild(user_col);
-               row.appendChild(bac_col);
-               row.appendChild(sobriety_col);
-               leaderboard.appendChild(row);
-
-               // Highlight the current user
-               if (username == my_username) {
-                   // Make the row yellow
-                   row.style.backgroundColor = "#ffc107";
-                   row.style.color = "#333";
-
-                   // Get all the rows in tbody
-                   let rows = document.querySelectorAll(".table tbody tr");
-
-                   // Loop through each row to find the appropriate BAC range
-                   for (let row of rows) {
-                     let bacCell = row.cells[0].innerText;
-                     let [lower, upper] = bacCell.split('–').map(Number);
-
-                     // Special case for the last row (BAC > 0.50)
-                     if (bacCell.startsWith(">")) {
-                       lower = parseFloat(bacCell.substr(1));
-                       upper = Infinity;
-                     }
-
-                     if (bac >= lower && bac <= upper) {
-                       row.style.backgroundColor = "yellow";  // Change to any color you like
-                       break;  // Once we find the row, no need to continue the loop
-                     }
-                     else {
-                         // Alternate between white and grey (grey on odd rows)
-                        if (row.rowIndex % 2 == 0) {
-                            row.style.backgroundColor = "#fff";
-                        } else {
-                            row.style.backgroundColor = "#f4f4f4";
-                        }
-                     }
-                   }
-               }
-           }
-
-           // Convert the NodeList to an array
-           let rows = Array.from(leaderboard.children);
-
-           // Sort the array based on the BAC value
-           rows.sort((a, b) => {
-             let bacA = parseFloat(a.querySelector('.col:last-child').innerHTML);
-             let bacB = parseFloat(b.querySelector('.col:last-child').innerHTML);
-             return bacB - bacA; // Sort in descending order
-           });
-
-           // Remove all existing rows from the leaderboard
-           while (leaderboard.firstChild) {
-             leaderboard.removeChild(leaderboard.firstChild);
-           }
-
-           // Re-append the sorted rows
-           rows.forEach(row => leaderboard.appendChild(row));
-        }
-
-
-        // Chart initialization
-        var ctx = document.getElementById('myChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            datasets: []
-          },
-          options: {
-            scales: {
-              x: {
-                type: 'time',
-                  time: {
-                    unit: 'minute'
-                  },
-                title: {
-                  display: true,
-                  text: 'Time'
-                }
-              },
-              y: {
-                title: {
-                  display: true,
-                  text: 'BAC'
-                },
-                min: 0,
-              }
+    // ==================== CHART INITIALIZATION ====================
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: []
+      },
+      options: {
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'minute'
             },
-            responsive: true,
-            maintainAspectRatio: true,
+            title: {
+              display: true,
+              text: 'Time'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'BAC'
+            },
+            min: 0,
           }
-        });
-
-
-        // Socket.IO setup
-        var socket = io.connect('https://' + document.domain + ':' + location.port);
-
-        socket.on('connect', function() {
-            if (loaded) {
-                socket.emit('get_data');
+        },
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              font: {
+                size: 14
+              }
             }
-        });
+          }
+        }
+      }
+    });
 
-        socket.on('update_data', function(result) {
-            drinks = result[0];
-            users = result[1];
-        });
+    // ==================== SOCKET.IO EVENT HANDLERS ====================
+    socket.on('connect', function() {
+      if (loaded) {
+        socket.emit('get_data');
+      }
+    });
 
-        // Add drink button event
-        document.getElementById('addDrink').addEventListener('click', function(e) {
-            e.preventDefault();
-            let volume = document.getElementById('spinbox1').value;
-            let strength = document.getElementById('spinbox2').value * 0.01;
-            if (volume < 25 || volume > 1000 || strength < 0.01 || strength > 0.75) {
-                alert("Invalid drink parameters");
-                return;
+    socket.on('update_data', function(result) {
+      drinks = result[0];
+      users = result[1];
+      autoUpdate();
+    });
+
+    // ==================== USER FORM HANDLER ====================
+    document.getElementById("userForm").addEventListener("submit", function(e) {
+      e.preventDefault();  // Prevent the form from refreshing the page
+
+      // Save form inputs as cookies
+      document.cookie = "username=" + encodeURIComponent(document.getElementById("username").value) + ";path=/";
+      document.cookie = "weight=" + encodeURIComponent(document.getElementById("weight").value) + ";path=/";
+      document.cookie = "gender=" + encodeURIComponent(document.getElementById("gender").value) + ";path=/";
+      my_username = getCookie('username');
+      my_weight = parseFloat(getCookie('weight'));
+      my_gender = getCookie('gender');
+      loaded = true;
+      document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+      document.getElementById("main").style.display = "block";  // Show the main page
+
+      // Emit new user to server
+      socket.emit('new_user', [my_username, my_weight, my_gender]);
+      socket.emit('get_data');
+      autoUpdate();
+    });
+
+    // ==================== ADD DRINK HANDLER ====================
+    document.getElementById('drinkForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      let volume = parseFloat(document.getElementById('spinbox1').value);
+      let strength = parseFloat(document.getElementById('spinbox2').value);
+
+      // No volume or strength limits
+      if (isNaN(volume) || isNaN(strength) || volume <= 0 || strength <= 0) {
+        showFeedback("Invalid drink parameters!", "danger");
+        return;
+      }
+
+      const requestData = {
+        'User': my_username,
+        'Volume': volume,
+        'Strength': strength
+      };
+
+      socket.emit('add_drink', requestData);
+
+      // Clear input fields
+      document.getElementById('spinbox1').value = '';
+      document.getElementById('spinbox2').value = '';
+
+      // Calculate new BAC
+      let userDrinks = drinks[my_username] || [];
+      let latestBAC = 0;
+      if (userDrinks.length > 0) {
+        latestBAC = calculateLatestBAC(userDrinks, my_weight, my_gender, volume, strength);
+      }
+
+      // Display feedback message based on latestBAC
+      displayBACMessage(latestBAC);
+    });
+
+    // ==================== REMOVE LAST DRINK HANDLER ====================
+    document.getElementById('removeDrink').addEventListener('click', function(e) {
+      e.preventDefault();
+      socket.emit('remove_last_drink', my_username);
+    });
+
+    // ==================== THEME SWITCHING LOGIC ====================
+    const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
+    let currentThemeIndex = 0;
+    const bodyEl = document.body;
+
+    // Theme Toggle Function
+    function toggleTheme() {
+      // Remove the old theme class
+      bodyEl.classList.remove(themes[currentThemeIndex]);
+      // Increment the index
+      currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+      // Add the new theme class
+      bodyEl.classList.add(themes[currentThemeIndex]);
+    }
+
+    // Attach event listener to the title for theme toggling
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      toggleTheme();
+    });
+
+    // ==================== FEEDBACK MESSAGE FUNCTION ====================
+    function showFeedback(message, type) {
+      const feedback = document.getElementById('feedbackMessage');
+      feedback.innerHTML = message;
+      if (type === "success") {
+        feedback.style.backgroundColor = "#28a745"; // Green
+      } else if (type === "danger") {
+        feedback.style.backgroundColor = "#dc3545"; // Red
+      } else if (type === "info") {
+        feedback.style.backgroundColor = "#17a2b8"; // Teal
+      }
+      feedback.style.display = "block";
+      feedback.classList.add('animate__animated', 'animate__fadeInRight');
+      setTimeout(() => {
+        feedback.classList.remove('animate__fadeInRight');
+        feedback.classList.add('animate__fadeOutRight');
+        setTimeout(() => {
+          feedback.style.display = "none";
+          feedback.classList.remove('animate__fadeOutRight');
+        }, 500);
+      }, 3000);
+    }
+
+    // ==================== BAC MESSAGE FUNCTION ====================
+    function displayBACMessage(bac) {
+      let messages = [];
+
+      // Define messages based on BAC ranges
+      if (bac >= 0 && bac < 0.03) {
+        messages = [
+          "You're just getting started! Cheers!",
+          "Light drinking, keep it up!",
+          "You're maintaining control. Nice!",
+          "Sipping like a pro!",
+          "Just a dabble, eh?"
+        ];
+      } else if (bac >= 0.03 && bac < 0.06) {
+        messages = [
+          "Feeling good? Remember to pace yourself!",
+          "Enjoying responsibly, huh?",
+          "A bit tipsy! Stay hydrated.",
+          "Balancing act in progress.",
+          "Mildly merry!"
+        ];
+      } else if (bac >= 0.06 && bac < 0.10) {
+        messages = [
+          "You’re at a moderate level. Keep an eye on your limits!",
+          "Getting the buzz! Stay safe out there.",
+          "You're feeling the effects. Maybe slow down a bit.",
+          "Buzzing and blissful!",
+          "Stepping into the fun zone."
+        ];
+      } else if (bac >= 0.10 && bac < 0.20) {
+        messages = [
+          "You're quite drunk! Consider taking a break.",
+          "High BAC! Drink some water.",
+          "Things are getting serious. Stay safe!",
+          "Slurred speech and laughter, nice!",
+          "Living the high life!"
+        ];
+      } else if (bac >= 0.20 && bac < 0.30) {
+        messages = [
+          "Dangerously drunk! Maybe it's time to call it a night.",
+          "High levels detected. Please be cautious.",
+          "You're very intoxicated. Safety first!",
+          "Stumbling into chaos!",
+          "Time to slow down, champ."
+        ];
+      } else if (bac >= 0.30 && bac < 0.40) {
+        messages = [
+          "Extreme BAC! Seek assistance immediately.",
+          "You're at a critical level. Stay safe!",
+          "Please seek medical attention.",
+          "Lost in a booze haze!",
+          "Madness in motion!"
+        ];
+      } else if (bac >= 0.40) {
+        messages = [
+          "Critical BAC! Immediate help may be required.",
+          "Danger! You're at a life-threatening level.",
+          "Please seek medical attention.",
+          "Beyond tipsy... into oblivion!",
+          "You're a walking fire hazard!"
+        ];
+      }
+
+      // Select a random message to avoid repetition
+      if (messages.length > 0) {
+        const randomIndex = Math.floor(Math.random() * messages.length);
+        showFeedback(messages[randomIndex], "success");
+      }
+    }
+
+    // ==================== BAC CALCULATION FOR FEEDBACK ====================
+    function calculateLatestBAC(userDrinks, weight, gender, newVolume, newStrength) {
+      const metabolismRate = 0.017;  // 0.017 g/100mL/hour
+      const widmarkFactor = (gender === 'Male') ? 0.58 : 0.49;
+      const bodyWeightInGrams = weight * 1000;  // Convert kg to grams
+      const currentTime = Date.now() / 1000;
+
+      let totalAlcohol = 0;
+      let earliestTime = currentTime;
+
+      // Include existing drinks
+      for (const [volume, strength, time] of userDrinks) {
+        totalAlcohol += (volume * (strength / 100)) * 0.789;
+        if (time < earliestTime) earliestTime = time;
+      }
+
+      // Include the new drink
+      totalAlcohol += (newVolume * (newStrength / 100)) * 0.789;
+
+      const timeElapsed = (currentTime - earliestTime) / 3600; // in hours
+      let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
+      return bac > 0 ? bac : 0;
+    }
+
+    // ==================== THEME INITIALIZATION ====================
+    window.onload = () => {
+      if (!bypass) {
+        if (document.cookie.includes("username=") && !bypass) {
+          my_username = getCookie('username');
+          my_weight = parseFloat(getCookie('weight'));
+          my_gender = getCookie('gender');
+          loaded = true;
+          document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+          document.getElementById("main").style.display = "block";  // Show the main page
+          socket.emit('get_data');
+          autoUpdate();
+        } else {
+          // Show the form
+          document.getElementById("userFormDiv").style.display = "block";
+        }
+      } else {
+        // Bypass login form
+        loaded = true;
+        document.getElementById("userFormDiv").style.display = "none";  // Hide the form
+        document.getElementById("main").style.display = "block";  // Show the main page
+        socket.emit('get_data');
+        autoUpdate();
+      }
+
+      // Assign the OG theme as default
+      currentThemeIndex = 0; // 'theme-og'
+      bodyEl.classList.add(themes[currentThemeIndex]);
+
+      // Initialize Particles.js
+      particlesJS("particles-js", {
+        "particles": {
+          "number": {
+            "value": 150,
+            "density": {
+              "enable": true,
+              "value_area": 800
             }
+          },
+          "color": {
+            "value": ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff"]
+          },
+          "shape": {
+            "type": "circle",
+            "stroke": {
+              "width": 0,
+              "color": "#000000"
+            }
+          },
+          "opacity": {
+            "value": 0.5,
+            "random": true,
+            "anim": {
+              "enable": true,
+              "speed": 0.5,
+              "opacity_min": 0.1,
+              "sync": false
+            }
+          },
+          "size": {
+            "value": 3,
+            "random": true,
+            "anim": {
+              "enable": true,
+              "speed": 2,
+              "size_min": 0.1,
+              "sync": false
+            }
+          },
+          "line_linked": {
+            "enable": false
+          },
+          "move": {
+            "enable": true,
+            "speed": 1,
+            "direction": "none",
+            "random": true,
+            "straight": false,
+            "out_mode": "out",
+            "bounce": false
+          }
+        },
+        "interactivity": {
+          "detect_on": "canvas",
+          "events": {
+            "onhover": {
+              "enable": true,
+              "mode": "repulse"
+            },
+            "onclick": {
+              "enable": true,
+              "mode": "push"
+            }
+          },
+          "modes": {
+            "repulse": {
+              "distance": 100,
+              "duration": 0.4
+            },
+            "push": {
+              "particles_nb": 4
+            }
+          }
+        },
+        "retina_detect": true
+      });
 
-            // Check the button isn't being pressed within 5 seconds of the user's last entry
-            // Get the last entry, but first check they have entries at all:
-            // TODO: Add this back in
-
-            const requestData = {
-                'User': my_username,
-                'Volume': volume,
-                'Strength':strength
-            };
-
-            socket.emit('add_drink', requestData);
-        });
-
-        // Auto update every second
-        setInterval(autoUpdate, 1000);
-
-    </script>
-
-    <script>
-        // Remove last drink button event
-        document.getElementById('removeDrink').addEventListener('click', function(e) {
-            e.preventDefault();
-            socket.emit('remove_last_drink', my_username);
-        });
-    </script>
-
+      // Start auto-update interval
+      setInterval(autoUpdate, 1000);
+    };
+  </script>
 </body>
 </html>
