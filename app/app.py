@@ -4,7 +4,8 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 socketio = SocketIO(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@db/main'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@db/main'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/main'
 db = SQLAlchemy(app)
 
 
@@ -104,10 +105,6 @@ def remove_user(username):
 
 @app.route('/')
 def index():
-    delete_cookies = True
-    if delete_cookies:
-        for cookie in request.cookies:
-            flask.make_response().set_cookie(cookie, expires=0)
     return render_template("extra.html")
 
 
@@ -118,14 +115,13 @@ def data():
 
 @socketio.on('remove_last_drink')
 def remove_last_drink(username):
-    drinks = Drinks.query.filter_by(User=username).all()
-    if len(drinks) > 0:
-        db.session.delete(drinks[-1])
+    last_drink = Drinks.query.filter_by(User=username).order_by(Drinks.Time.desc()).first()
+    if last_drink:
+        db.session.delete(last_drink)
         db.session.commit()
-
     drinks, users = fetch_data()
     socketio.emit('update_data', [drinks, users])
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=6969)
+    app.run(host='0.0.0.0', port=6969)

@@ -55,6 +55,11 @@
       --primary-color: var(--primary-color-og);
       --accent-color: var(--accent-color-og);
       --card-bg: var(--card-bg-og);
+
+      --base-spacing: 16px; /* adjust as needed */
+      --golden-spacing: calc(var(--base-spacing) * 1.618);
+      --small-spacing: calc(var(--base-spacing) / 2);
+      --large-spacing: calc(var(--base-spacing) * 2);
     }
 
     /* Body Styling */
@@ -135,7 +140,8 @@
       backdrop-filter: blur(5px);
       border: 2px solid var(--accent-color);
       border-radius: 15px;
-      margin-bottom: 20px;
+      margin-bottom: var(--golden-spacing);
+      padding: var(--base-spacing);
       box-shadow: 0 0 15px var(--accent-color);
       transition: box-shadow 0.3s ease;
     }
@@ -187,7 +193,8 @@
 
     /* Container and Form Spacing */
     .container, #userFormDiv {
-      margin-top: 20px;
+      margin-top: var(--golden-spacing);
+      margin-bottom: var(--golden-spacing);
     }
 
     /* Optimize Sign-Up Form Size and Position */
@@ -218,27 +225,24 @@
     }
 
     /* Responsive Table */
+    /*
     @media (max-width: 576px) {
       table, thead, tbody, th, td, tr {
         display: block;
       }
-
       thead tr {
         position: absolute;
         top: -9999px;
         left: -9999px;
       }
-
       tr {
         margin-bottom: 1rem;
       }
-
       td {
         border: none;
         position: relative;
         padding-left: 50%;
       }
-
       td::before {
         position: absolute;
         top: 0;
@@ -248,12 +252,30 @@
         white-space: nowrap;
         font-weight: bold;
       }
-
-      /* Label the data */
       td:nth-of-type(1)::before { content: "BAC (%)"; }
       td:nth-of-type(2)::before { content: "Behavior"; }
       td:nth-of-type(3)::before { content: "Impairment"; }
       td:nth-of-type(4)::before { content: "Translation"; }
+    }
+    */
+
+    /* New CSS for horizontal scrolling */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: var(--golden-spacing);
+    }
+
+    .table-responsive table {
+      min-width: 600px; /* Tweak as needed */
+    }
+
+    /* When the screen width is below 1000px, freeze the table width */
+    @media (max-width: 1000px) {
+      .table-responsive table {
+        min-width: 1000px;
+        width: 1000px; /* Freeze the table's width to 1000px */
+      }
     }
 
     /* Feedback Message Styling */
@@ -288,6 +310,24 @@
     .btn-danger:hover {
       background-color: #c82333;
       border-color: #bd2130;
+    }
+
+    /* Flexbox container for equal height columns */
+    .equal-height-row {
+      display: flex;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+
+    /* Ensure each column acts as a flex container */
+    .col-equal-height {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Make the card take up the remaining space, with a minimum height */
+    .card.equal-height {
+      flex: 1;
+      min-height: 300px; /* Adjust this value as needed for your design */
     }
   </style>
 </head>
@@ -340,27 +380,24 @@
 
   <!-- Main Content Section -->
   <div class="container animate__animated animate__fadeIn" style="display: none;" id="main">
-    <div class="row">
-      <!-- Graph Section -->
-      <div class="col-md-6">
-        <div class="card animate__animated animate__zoomIn">
-          <div class="card-header">Graph of Shame</div>
-          <div class="card-body" id="graph">
-            <canvas id="myChart" width="400" height="200"></canvas>
+      <div class="row equal-height-row">
+        <div class="col-md-6 col-equal-height">
+          <div class="card equal-height">
+            <div class="card-header">Graph of Shame</div>
+            <div class="card-body" id="graph">
+              <canvas id="myChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-equal-height">
+          <div class="card equal-height">
+            <div class="card-header">Standings (A.K.A. Future Blackouts)</div>
+            <div class="card-body" id="leaderboard">
+              <!-- Leaderboard will be dynamically populated -->
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Standings Section -->
-      <div class="col-md-6">
-        <div class="card animate__animated animate__zoomIn">
-          <div class="card-header">Standings (A.K.A. Future Blackouts)</div>
-          <div class="card-body" id="leaderboard">
-            <!-- Leaderboard will be dynamically populated -->
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Drink Entry Form -->
     <div class="row mt-4" id="entry">
@@ -549,41 +586,38 @@
 
     // ==================== AUTO UPDATE FUNCTION ====================
     function autoUpdate() {
-      // Iterate through user data to populate or update datasets
+      // Update or create datasets for users in drinks
       for (const username in drinks) {
         const user_drinks = drinks[username];
         const weight = users[username][0];
         const gender = users[username][1];
 
         const { timeLabels, bacValues } = calculateBACOverTime(username, user_drinks, weight, gender);
+        // If there are no data points for this user, remove their dataset if it exists
         if (timeLabels.length === 0) {
           let dataset = myChart.data.datasets.find(d => d.label === username);
           if (dataset) {
             myChart.data.datasets.splice(myChart.data.datasets.indexOf(dataset), 1);
+            console.log("Deleted user " + username + " from the graph");
           }
-          console.log("Deleted user " + username + " from the graph");
           continue;
-        }  // Skip if BAC is negative
-
+        }
         // Check if dataset for user already exists
         let dataset = myChart.data.datasets.find(d => d.label === username);
-
         if (!dataset) {
           // Create new dataset if not exists
           if (!colormap[username]) {
-            colormap[username] = generateRandomColor(); // Your color function
+            colormap[username] = generateRandomColor();
           }
-
           const newDataset = {
             label: username,
             data: timeLabels.map((time, index) => ({ x: time, y: bacValues[index] })),
             borderColor: colormap[username],
             fill: false,
-            tension: 0.4, // Smoother lines
+            tension: 0.4,
             pointRadius: 2,
             borderWidth: 2
           };
-
           myChart.data.datasets.push(newDataset);
         } else {
           // Update existing dataset
@@ -591,10 +625,13 @@
         }
       }
 
+      // Remove any dataset for users no longer in the drinks object
+      myChart.data.datasets = myChart.data.datasets.filter(dataset => dataset.label in drinks);
+
       // Finally, update the chart
       myChart.update();
 
-      // Update the leaderboard
+      // Update the leaderboard (this part can remain as is)
       let leaderboard = document.getElementById("leaderboard");
       leaderboard.innerHTML = "";
       let sorted_users = myChart.data.datasets.map(dataset => dataset.label).sort((a, b) => {
@@ -602,7 +639,6 @@
         let bacA = myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0].y || 0;
         return bacB - bacA; // Sort in descending order
       });
-
       // Create Header Row
       let header_row = document.createElement("div");
       header_row.className = "row font-weight-bold";
@@ -623,7 +659,6 @@
 
       // Populate Leaderboard
       for (const username of sorted_users) {
-        // Take BAC from the chart
         let dataset = myChart.data.datasets.find(ds => ds.label === username);
         if (!dataset) continue;
         let bac = dataset.data.slice(-1)[0].y;
@@ -652,12 +687,12 @@
 
         // Highlight the current user
         if (username === my_username) {
-          // Make the row yellow
           row.style.backgroundColor = "#ffc107";
           row.style.color = "#333";
         }
       }
     }
+
 
     // ==================== CHART INITIALIZATION ====================
     var ctx = document.getElementById('myChart').getContext('2d');
@@ -687,7 +722,7 @@
           }
         },
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: true,
@@ -755,10 +790,6 @@
       };
 
       socket.emit('add_drink', requestData);
-
-      // Clear input fields
-      document.getElementById('spinbox1').value = '';
-      document.getElementById('spinbox2').value = '';
 
       // Calculate new BAC
       let userDrinks = drinks[my_username] || [];
@@ -924,6 +955,8 @@
           loaded = true;
           document.getElementById("userFormDiv").style.display = "none";  // Hide the form
           document.getElementById("main").style.display = "block";  // Show the main page
+
+          socket.emit('new_user', [my_username, my_weight, my_gender]);
           socket.emit('get_data');
           autoUpdate();
         } else {
