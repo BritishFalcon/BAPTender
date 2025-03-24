@@ -65,7 +65,7 @@ from typing import Optional
 from fastapi.responses import JSONResponse
 
 
-@router.post("/groups/switch", response_model=Optional[GroupRead])
+@router.post("/switch", response_model=Optional[GroupRead])
 async def switch_group(
     group_id: Optional[uuid.UUID] = Query(None),
     user: User = Depends(current_active_user),
@@ -106,7 +106,7 @@ async def switch_group(
     return group
 
 
-@router.get("/groups/current", response_model=Optional[GroupRead])
+@router.get("/current", response_model=Optional[GroupRead])
 async def current_group(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
@@ -124,7 +124,7 @@ async def current_group(
     return group
 
 
-@router.get("/groups/my", response_model=list[GroupRead])
+@router.get("/my", response_model=list[GroupRead])
 async def my_groups(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
@@ -139,7 +139,7 @@ async def my_groups(
     return groups
 
 
-@router.get("/groups/public", response_model=list[GroupRead])
+@router.get("/public", response_model=list[GroupRead])
 async def public_groups(
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -151,7 +151,7 @@ async def public_groups(
     return groups
 
 
-@router.get("/groups/invite-link/{group_id}")
+@router.get("/invite-link/{group_id}")
 async def invite_link(
     group_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -178,7 +178,7 @@ async def invite_link(
     return {"invite_link": f"{HOST_URL}/invite/{token}"}
 
 
-@router.get("/groups/invite/{token}", response_model=GroupRead)
+@router.get("/invite/{token}", response_model=GroupRead)
 async def join_group(
     token: str,
     user: User = Depends(current_active_user),
@@ -214,7 +214,7 @@ async def join_group(
     return group
 
 
-@router.get("/groups/members/{group_id}", response_model=list[GroupMember])
+@router.get("/members/{group_id}", response_model=list[GroupMember])
 async def get_group_members(
     group_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -250,7 +250,7 @@ async def get_group_members(
     ]
 
 
-@router.post("/groups/leave/{group_id}")
+@router.post("/leave/{group_id}")
 async def leave_group(
     group_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -288,7 +288,7 @@ async def leave_group(
     return {"detail": "Left group."}
 
 
-@router.post("/groups/delete/{group_id}")
+@router.post("/delete/{group_id}")
 async def delete_group(
     group_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -309,7 +309,7 @@ async def delete_group(
     return {"detail": "Deleted group."}
 
 
-@router.post("/groups/kick/{group_id}/{user_id}")
+@router.post("/kick/{group_id}/{user_id}")
 async def kick_user(
     group_id: uuid.UUID,
     user_id: uuid.UUID,
