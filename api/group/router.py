@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from api.auth.deps import current_active_user
 from api.core.db import get_async_session, HOST_URL
@@ -175,7 +176,7 @@ async def invite_link(
         raise HTTPException(status_code=400, detail="Group is public. No invite link needed.")
 
     token = generate_invite_token(group_id)
-    return {"invite_link": f"{HOST_URL}/invite/{token}"}
+    return {"invite_link": f"{HOST_URL}/group/invite/{token}"}
 
 
 @router.get("/invite/{token}", response_model=GroupRead)
@@ -220,22 +221,25 @@ async def get_group_members(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # Confirm user is in the group
-    check = await session.execute(
-        select(UserGroup).where(UserGroup.group_id == group_id, UserGroup.user_id == user.id)
+    # Check user is in the group
+    result = await session.execute(
+        select(UserGroup)
+        .where(UserGroup.group_id == group_id, UserGroup.user_id == user.id)
     )
-    if not check.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Group not found or user not in group.")
+    if not result.scalar():
+        raise HTTPException(status_code=404, detail="Group not found.")
 
-    # Confirm group exists
+    # Get the group itself
     group_result = await session.execute(select(Group).where(Group.id == group_id))
     group = group_result.scalar_one_or_none()
     if not group:
         raise HTTPException(status_code=404, detail="Group not found.")
 
-    # Get all members
+    # Get all members with eager user load
     result = await session.execute(
-        select(UserGroup).where(UserGroup.group_id == group_id).join(UserGroup.user)
+        select(UserGroup)
+        .options(selectinload(UserGroup.user))
+        .where(UserGroup.group_id == group_id)
     )
     user_groups = result.scalars().all()
 
@@ -248,6 +252,7 @@ async def get_group_members(
         )
         for ug in user_groups
     ]
+
 
 
 @router.post("/leave/{group_id}")
