@@ -20,3 +20,4 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
 
     drinks = relationship("Drink", back_populates="user", cascade="all, delete-orphan")
     archived_drinks = relationship("ArchivedDrink", back_populates="user", cascade="all, delete-orphan")
+    groups = relationship("UserGroup", back_populates="user", cascade="all, delete-orphan")

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi_users import schemas
@@ -44,9 +44,14 @@ class UserBase(BaseModel):
 
 class UserRead(schemas.BaseUser[uuid.UUID], UserBase):
     id: uuid.UUID
+    created_at: datetime
+    last_seen: datetime
     is_active: Optional[bool] = Field(None, exclude=True)
     is_superuser: Optional[bool] = Field(None, exclude=True)
     is_verified: Optional[bool] = Field(None, exclude=True)
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(BaseUserCreate):

@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 # Use env var for prod config, fallback to local dev
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost/baptender")
+HOST_URL = os.getenv("HOST_URL", "http://localhost:8000")
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
