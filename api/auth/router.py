@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from api.auth.users import auth_backend, fastapi_users, current_active_user
+from api.auth.auth import auth_backend
+from api.auth.deps import fastapi_users, current_active_user
 from api.auth.models import User
 from api.auth.schemas import UserCreate, UserRead, UserUpdate
 

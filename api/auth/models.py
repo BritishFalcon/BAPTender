@@ -1,25 +1,22 @@
-from typing import AsyncGenerator
+from sqlalchemy import Column, String, Float, Date, Boolean, DateTime, func
+from sqlalchemy.orm import relationship
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 
-from fastapi import Depends
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, relationship
-from sqlalchemy import Column, String, Float, Date, Boolean, Integer
-from api.core.db import Base, DATABASE_URL, get_async_session
+from api.core.db import Base
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "users"
+
     display_name = Column(String(length=20), nullable=False)
     weight = Column(Float, nullable=False)
     height = Column(Float, nullable=True)
-    gender = Column(String(length=6), nullable=False)  # "MALE" / "FEMALE"
+    gender = Column(String(length=6), nullable=False)
     dob = Column(Date, nullable=False)
     real_dob = Column(Boolean, nullable=False)
 
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
     drinks = relationship("Drink", back_populates="user", cascade="all, delete-orphan")
     archived_drinks = relationship("ArchivedDrink", back_populates="user", cascade="all, delete-orphan")
-
-
-async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, User)

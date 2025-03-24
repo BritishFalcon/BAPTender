@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from api.auth.deps import update_last_seen_user
 from api.drinks.models import Drink
 from api.drinks.schemas import DrinkCreate, DrinkRead
-from api.auth.users import current_active_user
-from api.auth.models import User, get_async_session
+from api.core.db import get_async_session
+from api.auth.models import User
 
 router = APIRouter()
 
@@ -14,7 +15,7 @@ router = APIRouter()
 async def create_drink(
     drink: DrinkCreate,
     session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_active_user),
+    user: User = Depends(update_last_seen_user),
 ):
     db_drink = Drink(**drink.dict(), user_id=user.id)
     session.add(db_drink)
@@ -26,7 +27,7 @@ async def create_drink(
 @router.delete("/last", response_model=DrinkRead)
 async def delete_last_drink(
     session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_active_user),
+    user: User = Depends(update_last_seen_user),
 ):
     # Find the most recent drink by add_time
     result = await session.execute(
@@ -48,7 +49,7 @@ async def delete_last_drink(
 @router.get("/mine", response_model=list[DrinkRead])
 async def get_my_drinks(
     session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_active_user),
+    user: User = Depends(update_last_seen_user),
 ):
     result = await session.execute(
         select(Drink)
