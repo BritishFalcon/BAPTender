@@ -1,12 +1,12 @@
 from pydantic import BaseModel, field_validator, constr, confloat
 from typing import Optional
 from uuid import UUID
-from datetime import date
+from datetime import datetime
 
 
 class DrinkBase(BaseModel):
     nickname: Optional[constr(min_length=1, max_length=50, strict=True)] = None
-    add_time: date
+    add_time: datetime
     volume: confloat(ge=0.0, le=5000.0, strict=True)  # ml
     strength: confloat(ge=0.0, le=1.0, strict=True)  # ABV
 
