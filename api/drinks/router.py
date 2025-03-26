@@ -9,6 +9,8 @@ from api.drinks.models import Drink
 from api.drinks.schemas import DrinkCreate, DrinkRead
 from api.core.db import get_async_session
 from api.auth.models import User
+from api.group.models import Group
+from api.realtime.router import update_user
 from api.realtime.scheduler import update_archival
 
 router = APIRouter()
@@ -21,12 +23,14 @@ async def create_drink(
     drink: DrinkCreate,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(update_last_seen_user),
+    group: Group = Depends(update_last_seen_user),
 ):
     db_drink = Drink(**drink.model_dump(), user_id=user.id)
     session.add(db_drink)
     await session.commit()
     await session.refresh(db_drink)
     asyncio.create_task(update_archival(user.id))
+    asyncio.create_task(update_user(user, group))
     return db_drink
 
 
@@ -34,6 +38,7 @@ async def create_drink(
 async def delete_last_drink(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(update_last_seen_user),
+    group: Group = Depends(update_last_seen_user),
 ):
     # Find the most recent drink by add_time
     result = await session.execute(
@@ -50,6 +55,7 @@ async def delete_last_drink(
     await session.delete(last_drink)
     await session.commit()
     asyncio.create_task(update_archival(user.id))
+    asyncio.create_task(update_user(user, group))
     return last_drink
 
 
