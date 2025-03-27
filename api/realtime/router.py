@@ -1,26 +1,31 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from uuid import UUID
-from typing import Dict
+from typing import Dict, Optional
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+from api.auth.auth import ALGORITHM, SECRET
 from api.drinks.models import Drink
 from api.group.models import UserGroup
-from api.auth.deps import current_active_user
 from api.auth.models import User
 from api.core.db import get_async_session
-from api.group.deps import get_active_group
 from api.group.models import Group
 from api.realtime.calculations import drinks_to_bac
+from api.realtime.utils import get_active_group_ws, get_user_ws
+
+import jwt
 
 router = APIRouter()
 
 # In-memory store: group_id -> { user_id -> WebSocket }
-group_connections: Dict[UUID, Dict[UUID, WebSocket]] = {}
+group_connections: Dict[Optional[UUID], Dict[UUID, WebSocket]] = {}
 
 
 async def generate_initial_state(user: User, group: Group | None):
-    async with get_async_session() as session:
+    async for session in get_async_session():
         # Determine relevant users
         if group is None or group.name is None:
             relevant_users = [user]
@@ -70,19 +75,21 @@ async def generate_initial_state(user: User, group: Group | None):
             if u.id not in active_user_ids:
                 continue  # Skip inactive
 
+            age = (datetime.now(timezone.utc).date() - user.dob).days / 365
             user_data = {
                 "weight": u.weight,
                 "gender": u.gender,
                 "height": u.height,
-                "dob": u.dob,
-                "real_dob": u.real_dob,
+                "age": age,
             }
 
             u_drinks = [
                 {
+                    "id": d["id"],
+                    "nickname": d["nickname"],
                     "volume": d["volume"],
                     "strength": d["strength"],
-                    "time": d["add_time"],
+                    "time": d["time"],
                 }
                 for d in drinks_by_user.get(str(u.id), [])
             ]
@@ -148,12 +155,12 @@ async def update_user(user: User, group: Group):
             "active": True,
         }
 
+        age = (datetime.now(timezone.utc).date() - user.dob).days / 365
         user_data = {
             "weight": user.weight,
             "gender": user.gender,
             "height": user.height,
-            "dob": user.dob,
-            "real_dob": user.real_dob,
+            "age": age,
         }
 
         states = drinks_to_bac(format_drinks, user_data)
@@ -172,16 +179,33 @@ async def update_user(user: User, group: Group):
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    user: User = Depends(current_active_user),
-    group: Group = Depends(get_active_group),
-):
+async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    token = websocket.query_params.get("token")
 
-    if group.id not in group_connections:
-        group_connections[group.id] = {}
-    group_connections[group.id][user.id] = websocket
+    if not token:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    payload = jwt.decode(token.encode("utf-8"), SECRET, algorithms=[ALGORITHM], audience="fastapi-users:auth")
+    user_id = payload.get("sub")
+
+    try:
+        user = await get_user_ws(user_id)
+        group = await get_active_group_ws(user_id)
+    except Exception as e:
+        print(e)
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    if group:
+        if group.id not in group_connections:
+            group_connections[group.id] = {}
+        group_connections[group.id][user.id] = websocket
+    else:
+        if None not in group_connections:
+            group_connections[None] = {}
+        group_connections[None][user.id] = websocket
 
     # Send initial state
     state = await generate_initial_state(user, group)
@@ -193,8 +217,15 @@ async def websocket_endpoint(
             await websocket.send_text(f"Message text was: {data}")
 
     except WebSocketDisconnect:
-        if group.id in group_connections and user.id in group_connections[group.id]:
-            del group_connections[group.id][user.id]
+        if group:
+            if group.id in group_connections and user.id in group_connections[group.id]:
+                del group_connections[group.id][user.id]
 
-        if group in group_connections and not group_connections[group.id]:
-            del group_connections[group.id]
+            if group in group_connections and not group_connections[group.id]:
+                del group_connections[group.id]
+        else:
+            if None in group_connections and user.id in group_connections[None]:
+                del group_connections[None][user.id]
+
+            if None in group_connections and not group_connections[None]:
+                del group_connections[None]

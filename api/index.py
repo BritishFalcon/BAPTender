@@ -1,9 +1,11 @@
 from api.auth.router import router as auth_router
 from api.drinks.router import router as drinks_router
 from api.group.router import router as group_router
+from api.realtime.router import router as realtime_router
 from api.core.db import create_db_and_tables
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy import select
 from api.core.db import get_async_session
@@ -31,4 +33,16 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router, prefix="/auth")
 app.include_router(drinks_router, prefix="/drinks", tags=["drinks"])
 app.include_router(group_router, prefix="/group", tags=["group"])
+app.include_router(realtime_router, prefix="/realtime", tags=["realtime"])
 
+origins = [
+    "http://localhost:3000",  # your frontend URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

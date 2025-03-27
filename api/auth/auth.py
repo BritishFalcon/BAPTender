@@ -7,6 +7,7 @@ from fastapi_users.authentication import (
 
 # TODO: Migrate to environment variables
 SECRET = "SECRET"
+ALGORITHM = "HS256"
 
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
 
