@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
@@ -115,11 +116,14 @@ async def generate_initial_state(user: User, group: Group | None):
 
 
 async def update_user(user: User, group: Group):
+    """
     connections = group_connections.get(group.id)
     if not connections:
         return
+    """
+    print("Updating user")
 
-    async with get_async_session() as session:
+    async for session in get_async_session():
         if not getattr(group, "id", None):
             active_users = [user]
         else:
@@ -151,7 +155,7 @@ async def update_user(user: User, group: Group):
         member_data = {
             "id": str(user.id),
             "display_name": user.display_name,
-            "is_owner": group.owner_id == user.id,
+            "is_owner": (group and group.owner_id == user.id) if group else False,
             "active": True,
         }
 
@@ -174,8 +178,9 @@ async def update_user(user: User, group: Group):
         }
 
         for u in active_users:
-            if u.id in group_connections[group.id]:
-                await group_connections[group.id][u.id].send_json(update)
+            group_id = group.id if group else None
+            if u.id in group_connections[group_id]:
+                await group_connections[group_id][u.id].send_text(json.dumps(update, default=str))
 
 
 @router.websocket("/ws")
@@ -209,7 +214,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     # Send initial state
     state = await generate_initial_state(user, group)
-    await websocket.send_json(state)
+    await websocket.send_text(json.dumps(state, default=str))
 
     try:
         while True:

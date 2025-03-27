@@ -16,8 +16,5 @@ async def get_active_group(
     )
     user_group = result.scalars().first()
     if not user_group:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User has no active group."
-        )
+        return None
     return user_group.group

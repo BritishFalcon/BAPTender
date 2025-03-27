@@ -12,6 +12,7 @@ from api.auth.models import User
 from api.group.models import Group
 from api.realtime.router import update_user
 from api.realtime.scheduler import update_archival
+from api.group.deps import get_active_group
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ async def create_drink(
     drink: DrinkCreate,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(update_last_seen_user),
-    group: Group = Depends(update_last_seen_user),
+    group: Group = Depends(get_active_group),
 ):
     db_drink = Drink(**drink.model_dump(), user_id=user.id)
     session.add(db_drink)
@@ -38,7 +39,7 @@ async def create_drink(
 async def delete_last_drink(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(update_last_seen_user),
-    group: Group = Depends(update_last_seen_user),
+    group: Group = Depends(get_active_group),
 ):
     # Find the most recent drink by add_time
     result = await session.execute(
