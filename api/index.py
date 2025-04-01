@@ -37,6 +37,7 @@ app.include_router(realtime_router, prefix="/realtime", tags=["realtime"])
 
 origins = [
     "http://localhost:3000",  # your frontend URL
+    "http://127.0.0.1:3000"
 ]
 
 app.add_middleware(

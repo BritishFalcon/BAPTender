@@ -1,93 +1,61 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BAPTenderProvider, useBAPTender } from "@/context/BAPTenderContext";
+import { BAPTenderProvider } from "@/context/BAPTenderContext";
+import AuthGate from "@/components/AuthGate";
+import Header from "@/components/Header";
+import Graph from "@/components/Graph";
+import UserBACStatusTable from "@/components/Table";
+import DrinksForm from "@/components/Drinks";
 
-// A simple component to show the context data on screen
-function BAPTenderDebugger() {
-  const { state, rawMessage } = useBAPTender();
-
-  return (
-    <div>
-      <h2>Provider Debugger</h2>
-      <div>
-        <h3>Raw WS Message</h3>
-        <pre style={{ background: "#333", color: "#fff", padding: "1rem" }}>
-          {rawMessage || "No message received yet"}
-        </pre>
-      </div>
-      <div>
-        <h3>Formatted State from Context</h3>
-        <pre style={{ background: "#333", color: "#fff", padding: "1rem" }}>
-          {JSON.stringify(state, null, 2)}
-        </pre>
-      </div>
-    </div>
-  );
-}
-
-export default function DummyPage() {
-  const [token, setToken] = useState<string>("");
-  const [loginError, setLoginError] = useState<string | null>(null);
+export default function HomePage() {
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function login() {
-      try {
-        // Use absolute URL if needed; adjust the port/host to match your backend.
-        const res = await fetch("http://localhost:8000/auth/jwt/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            username: "b.griffiths2002@gmail.com",
-            password: "password",
-          }),
-        });
-
-        if (!res.ok) {
-          setLoginError("Login failed: " + res.statusText);
-          return;
-        }
-
-        const data = await res.json();
-        console.log("Token acquired:", data.access_token);
-        setToken(data.access_token);
-      } catch (err) {
-        console.error("Login error:", err);
-        setLoginError("Login error occurred");
-      }
-    }
-    login();
+    // Try to fetch token from localStorage on mount
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+    setLoading(false);
   }, []);
 
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  // If no token, show AuthGate for login/register
+  if (!token) {
+    return <AuthGate onLogin={setToken} />;
+  }
+
+  // If authenticated, wrap in provider so WS & context can do their magic
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Dummy Test Page for WebSocket Authentication</h1>
+    <BAPTenderProvider token={token}>
+      <div className="min-h-screen flex flex-col">
+        {/* Header at top */}
+        <Header />
 
-      <section>
-        <h2>Login Status</h2>
-        {loginError ? (
-          <p style={{ color: "red" }}>{loginError}</p>
-        ) : token ? (
-          <>
-            <h3>JWT Token:</h3>
-            <pre style={{ background: "#333", color: "#fff", padding: "1rem" }}>{token}</pre>
-          </>
-        ) : (
-          <p>Logging in...</p>
-        )}
-      </section>
+        {/* Main content */}
+        <main className="flex-1 p-4">
+          {/* Graph + Table side by side */}
+          <div
+            className="flex flex-wrap gap-4 items-stretch"
+            style={{ minHeight: "300px" }}
+          >
+            <div className="flex-1 border rounded p-2 overflow-hidden">
+              <Graph />
+            </div>
+            <div className="flex-1 border rounded p-2 overflow-hidden">
+              <UserBACStatusTable />
+            </div>
+          </div>
 
-      {/*
-        We only render the Provider (and thus open the WebSocket) AFTER we have a token.
-        The BAPTenderDebugger inside uses the context to display raw and formatted state.
-      */}
-      {token && (
-        <BAPTenderProvider token={token}>
-          <BAPTenderDebugger />
-        </BAPTenderProvider>
-      )}
-    </div>
+          {/* Drinks form below, spanning full width */}
+          <div className="mt-4">
+            <DrinksForm />
+          </div>
+        </main>
+      </div>
+    </BAPTenderProvider>
   );
 }

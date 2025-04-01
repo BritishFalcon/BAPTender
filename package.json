@@ -17,8 +17,12 @@
     "autoprefixer": "10.4.20",
     "chart.js": "^4.4.8",
     "concurrently": "^9.0.1",
+    "d3": "^7.9.0",
+    "epoch": "^0.1.0",
+    "epoch-charting": "^0.8.4",
     "eslint": "8.41.0",
     "eslint-config-next": "13.4.4",
+    "jquery": "^3.7.1",
     "next": "^14.2.13",
     "postcss": "^8.4.47",
     "react": "18.3.1",
@@ -26,5 +30,8 @@
     "react-dom": "18.3.1",
     "tailwindcss": "3.4.12",
     "typescript": "5.6.2"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.5.32"
   }
 }

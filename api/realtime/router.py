@@ -103,6 +103,12 @@ async def generate_initial_state(user: User, group: Group | None):
                 "id": str(user.id),
                 "display_name": user.display_name,
                 "is_owner": (group and user.id == group.owner_id) if group else False,
+                "email": user.email,
+                "weight": user.weight,
+                "gender": user.gender,
+                "height": user.height,
+                "dob": user.dob,
+                "real_dob": user.real_dob,
             },
             "group": {
                 "id": str(group.id) if group else None,
@@ -115,14 +121,14 @@ async def generate_initial_state(user: User, group: Group | None):
         }
 
 
+import json
+import logging
+from datetime import datetime, timezone
+
 async def update_user(user: User, group: Group):
-    """
-    connections = group_connections.get(group.id)
-    if not connections:
-        return
-    """
     print("Updating user")
 
+    # Start async session to query the database
     async for session in get_async_session():
         if not getattr(group, "id", None):
             active_users = [user]
@@ -177,10 +183,17 @@ async def update_user(user: User, group: Group):
             "states": states,
         }
 
+        # Loop through active users and try to send updates
         for u in active_users:
             group_id = group.id if group else None
-            if u.id in group_connections[group_id]:
-                await group_connections[group_id][u.id].send_text(json.dumps(update, default=str))
+            if u.id in group_connections.get(group_id, {}):
+                try:
+                    await group_connections[group_id][u.id].send_text(json.dumps(update, default=str))
+                except RuntimeError as e:
+                    # Log the error (closed connection) and clean up
+                    logging.warning(f"WebSocket for user {u.id} is closed: {e}")
+                    # Remove the closed connection from the group_connections
+                    del group_connections[group_id][u.id]
 
 
 @router.websocket("/ws")

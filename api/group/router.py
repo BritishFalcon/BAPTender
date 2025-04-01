@@ -19,6 +19,9 @@ from fastapi import Query
 
 router = APIRouter()
 
+# TODO: Handle state update on any change of group membership (switch, new, new/active member etc)
+
+
 @router.post("/create", response_model=GroupRead)
 async def create_group(
     group_data: GroupCreate,
