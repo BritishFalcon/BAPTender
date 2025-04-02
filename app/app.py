@@ -4,8 +4,8 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 socketio = SocketIO(app)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@db/main'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/main'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@db/main'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost/main'
 db = SQLAlchemy(app)
 
 
