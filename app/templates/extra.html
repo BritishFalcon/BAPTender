@@ -345,38 +345,40 @@
       BAPTender!
     </h1>
     <div>
-      <small class="text-muted" style="font-family: 'VT323', monospace;">
-        Born to be *questionable.*
-      </small>
+        <small class="text-muted" style="font-family: 'VT323', monospace;">
+          <span style="display:block;">A fun, safety-focused group alcohol tracker</span>
+          <span style="display:block;">Drink responsibly</span>
+        </small>
     </div>
   </div>
 
-  <!-- Sign-Up Form Section -->
-  <div id="userFormDiv" class="animate__animated animate__fadeInUp" style="display: none;">
-    <h1 style="font-family: 'Share Tech Mono';">Sign Up, Ya Drunken Meat Popsicle</h1>
-    <form id="userForm" class="mt-3">
-      <div class="form-group">
-        <label for="username">Username (like it matters)</label>
-        <input type="text" id="username" class="form-control" placeholder="YeetMaster3000" required>
-      </div>
-      <div class="form-group">
-        <label for="weight">Weight (kg, or something close)</label>
-        <input type="number" id="weight" class="form-control" placeholder="42, 69, etc." required>
-      </div>
-      <div class="form-group">
-        <label>Gender (pick your poison... I mean pronouns)</label>
-        <select id="gender" class="form-control">
-          <option>Male</option>
-          <option>Female</option>
-          <option>Non-binary</option>
-          <option>Prefer not to say</option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">
-        Submit (To The Chaos)
-      </button>
-    </form>
-  </div>
+<!-- Sign-Up Form Section -->
+<div id="userFormDiv" class="animate__animated animate__fadeInUp" style="display: none; text-align: center;">
+  <h1 style="font-family: 'Share Tech Mono';">Sign Up, Ya Drunken Meat Popsicle</h1>
+  <form id="userForm" class="mt-3 mx-auto" style="max-width: 400px;">
+    <div class="form-group">
+      <label for="username">Username (like it matters)</label>
+      <input type="text" id="username" class="form-control" placeholder="YeetMaster3000" required>
+    </div>
+    <div class="form-group">
+      <label for="weight">Weight (kg, or something close)</label>
+      <input type="number" id="weight" class="form-control" placeholder="42, 69, etc." required>
+    </div>
+    <div class="form-group">
+      <label>Gender (pick your poison... I mean pronouns)</label>
+      <select id="gender" class="form-control">
+        <option>Male</option>
+        <option>Female</option>
+        <option>Non-binary</option>
+        <option>Prefer not to say</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">
+      Submit (To The Chaos)
+    </button>
+  </form>
+</div>
+
 
   <!-- Main Content Section -->
   <div class="container animate__animated animate__fadeIn" style="display: none;" id="main">
@@ -498,7 +500,7 @@
   <!-- JavaScript Section -->
   <script>
     // ==================== SOCKET.IO SETUP ====================
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    var socket = io.connect('https://' + document.location.hostname + ':' + location.port);
 
     // ==================== GLOBAL VARIABLES ====================
     let loaded = false;
@@ -526,51 +528,80 @@
 
     // ==================== BAC CALCULATION ====================
     function calculateBACOverTime(username, drinks, bodyWeightInKg, gender) {
-      const metabolismRate = 0.017;  // 0.017 g/100mL/hour
+      const metabolismRate = 0.017; // g/100mL/hour
       const widmarkFactor = (gender === 'Male') ? 0.58 : 0.49;
-      const bodyWeightInGrams = bodyWeightInKg * 1000;  // Convert kg to grams
+      const bodyWeightInGrams = bodyWeightInKg * 1000;
 
-      let timeLabels = [];  // To store the time labels for the graph
-      let bacValues = [];   // To store the BAC values for the graph
+      let timeLabels = [];
+      let bacValues = [];
 
-      let totalAlcohol = 0; // To keep track of total alcohol consumed till each drink
-      if (drinks.length === 0) return { timeLabels: [], bacValues: [] };
-      let earliestTime = drinks[0][2];  // Initialize with the time of the first drink
+      if (drinks.length === 0) return { timeLabels, bacValues };
 
-      for (const [volume, strength, time] of drinks) {
-        // Calculate the time elapsed since the first drink (in hours)
-        const timeElapsed = (time - earliestTime) / 3600;
+      let earliestTime = drinks[0][2]; // earliest drink timestamp (Unix seconds)
+      let totalAlcohol = 0;
 
-        let old_bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-        if (old_bac < 0) old_bac = 0;  // BAC can't be negative
-        timeLabels.push(new Date(time * 1000));
-        bacValues.push(old_bac);
+      // First pass – build points after each drink is added
+      for (const [volume, strength, drinkTime] of drinks) {
+        // Calculate BAC just before adding this drink
+        let timeElapsedHours = (drinkTime - earliestTime) / 3600;
+        let oldBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsedHours);
+        if (oldBAC < 0) oldBAC = 0;
 
-        // Calculate the alcohol in the current drink
-        const alcoholInGrams = (volume * (strength / 100)) * 0.789;  // 0.789 g/cm^3 is the density of ethanol
+        // Add point for that moment
+        timeLabels.push(new Date(drinkTime * 1000));
+        bacValues.push(oldBAC);
+
+        // Now add the drink
+        const alcoholInGrams = volume * (strength / 100) * 0.789;
         totalAlcohol += alcoholInGrams;
 
-        // Calculate BAC at this point
-        let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-        if (bac <= 0) bac = 0;  // BAC can't be negative
+        // Calculate new BAC immediately after the drink
+        let newBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsedHours);
+        if (newBAC < 0) newBAC = 0;
 
-        // Add time and BAC to the lists
-        const timeLabel = new Date(time * 1000);  // Convert Unix time to human-readable format
-        timeLabels.push(timeLabel);
-        bacValues.push(bac);
+        // Add another point at the same drink timestamp, but with updated BAC
+        timeLabels.push(new Date(drinkTime * 1000));
+        bacValues.push(newBAC);
       }
 
-      // Add a final point to the graph to show the BAC at current time
-      const currentTime = Date.now() / 1000;
-      const timeElapsed = (currentTime - earliestTime) / 3600;
-      let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-      if (bac < 0) {
-        socket.emit('remove_user', my_username);
-        return { timeLabels: [], bacValues: [] };
-      }
+      // Final point at "now"
+      let currentTimeSec = Math.floor(Date.now() / 1000);
+      let timeElapsedHours = (currentTimeSec - earliestTime) / 3600;
+      let finalBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsedHours);
 
-      timeLabels.push(new Date(currentTime * 1000));
-      bacValues.push(bac);
+      if (finalBAC <= 0) {
+        // Solve for the exact sobriety timestamp
+        // BAC(t) = 0 => A - metabolismRate * hoursElapsed = 0
+        // A = the max raw BAC ignoring metabolism
+        const A = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809;
+        if (A > 0) {
+          const hoursToSober = A / metabolismRate;                  // hours after earliestTime
+          const soberSec = earliestTime + (hoursToSober * 3600);    // Unix seconds
+          const soberTime = new Date(soberSec * 1000);
+
+          if (soberSec > timeLabels[timeLabels.length - 1].getTime() / 1000 &&
+              soberSec < currentTimeSec) {
+            // Add a point exactly at sobriety time
+            timeLabels.push(soberTime);
+            bacValues.push(0);
+          }
+          // Finally, add a point at the current time so the line is flat from soberTime → now
+          timeLabels.push(new Date(currentTimeSec * 1000));
+          bacValues.push(0);
+        } else {
+          // If A <= 0, that means no real alcohol to begin with or something weird;
+          // Just clamp at 0 for the final point
+          timeLabels.push(new Date(currentTimeSec * 1000));
+          bacValues.push(0);
+        }
+      } else {
+        // Final BAC is still above 0, just show that data point
+        timeLabels.push(new Date(currentTimeSec * 1000));
+        bacValues.push(finalBAC);
+      }
 
       return { timeLabels, bacValues };
     }

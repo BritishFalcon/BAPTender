@@ -18,6 +18,7 @@
       overflow: hidden;
       position: relative;
     }
+
     /* Particle canvas behind everything – because subtlety is overrated */
     #particles-js {
       position: fixed;
@@ -27,15 +28,17 @@
       left: 0;
       z-index: -1;
     }
+
     /* Layout containers */
     .container-fluid {
       height: 100vh;
       display: flex;
       flex-direction: row;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch; /* Ensures children use full height */
       padding: 20px;
     }
+
+    /* Leaderboard container: now a flex column so table & logo can stack */
     #leaderboard-container {
       width: 300px;
       background: rgba(0, 0, 0, 0.5);
@@ -44,28 +47,19 @@
       padding: 20px;
       margin-right: 20px;
       box-shadow: 0 0 20px #ff00e0;
+      flex-shrink: 0; /* Keeps fixed width even when window shrinks */
+      display: flex;  /* Key: let it be a column */
+      flex-direction: column;
+      justify-content: flex-start; /* or space-between if you want it spaced out */
     }
-    #graph-container {
-      flex-grow: 1;
-      background: rgba(0, 0, 0, 0.5);
-      border: 2px solid #00ffff;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 20px #00ffff;
-      position: relative;
-      height: calc(100vh - 40px);
+
+    /* The scoreboard table region – we limit its max-height so there's room for logo */
+    #leaderboard {
+      overflow-y: auto;         /* Let the table scroll if it grows */
+      flex: 1;                  /* Fill up remaining space in the column */
+      margin-bottom: 20px;      /* Slight gap above the logo */
     }
-    h2 {
-      text-align: center;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-    .leaderboard-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #444;
-    }
+
     .leaderboard-header {
       font-size: 1.2rem;
       margin-bottom: 10px;
@@ -73,6 +67,57 @@
       padding-bottom: 5px;
       text-align: center;
     }
+
+    .leaderboard-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #444;
+    }
+
+    /* Logo section – same style so it visually matches the table container */
+    #logo-section {
+      text-align: center;
+      /* Optional: add border-top or some visual separation if you like */
+      /* border-top: 1px solid #444; */
+      padding-top: 10px;
+    }
+
+    /* Keep the logo nicely scaled within the container */
+    #logo-section img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Graph container for the chart */
+    #graph-container {
+      flex: 1 1 auto;
+      min-width: 0; /* Allows proper shrinking */
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #00ffff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 20px #00ffff;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ensure the canvas fills the container */
+    #graph-container canvas {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
     /* Flying drink emoji style */
     .flying-drink {
       position: absolute;
@@ -80,6 +125,7 @@
       pointer-events: none;
       z-index: 1000;
     }
+
     /* Banter message styling with improved readability */
     .banter-message {
       position: absolute;
@@ -95,6 +141,7 @@
       pointer-events: none;
       z-index: 1001;
     }
+
     /* Explosion element style */
     .explosion {
       position: absolute;
@@ -102,6 +149,7 @@
       pointer-events: none;
       z-index: 1001;
     }
+
     /* Flash overlay style */
     #flash-overlay {
       position: fixed;
@@ -124,8 +172,13 @@
   <div class="container-fluid">
     <div id="leaderboard-container">
       <h2>Standings</h2>
+      <!-- The 'table' portion (leaderboard) -->
       <div id="leaderboard">
         <!-- Leaderboard dynamically populated -->
+      </div>
+      <!-- The separate logo section below the table -->
+      <div id="logo-section">
+        <img src="/static/baptender-qrcode.png?v=2" alt="Your Glowing Logo">
       </div>
     </div>
     <div id="graph-container">
@@ -200,17 +253,16 @@
       "retina_detect": true
     });
 
-    // Setup Howler sound for new drink events – a little beep for your drunken escapades
+    // Setup Howler sound for new drink events
     var drinkSound = new Howl({
       src: ['https://actions.google.com/sounds/v1/alarms/beep_short.ogg'],
       volume: 0.5
     });
 
-    // Global variables (try not to lose them like your dignity after a night out)
+    // Global variables
     let users = {};
     let drinks = {};
     let colormap = {};
-    // Track previous drink counts per user to detect new drinks
     let previousDrinksCount = {};
 
     function generateRandomColor() {
@@ -220,45 +272,72 @@
       return `rgba(${r}, ${g}, ${b}, 1)`;
     }
 
-    // BAC calculation from your full app – because your drunken math deserves perfection
+    // BAC calculation from your full app
     function calculateBACOverTime(username, userDrinks, bodyWeightInKg, gender) {
-      const metabolismRate = 0.017;
+      const metabolismRate = 0.017; // g/100mL/hour
       const widmarkFactor = (gender === 'Male') ? 0.58 : 0.49;
       const bodyWeightInGrams = bodyWeightInKg * 1000;
+
       let timeLabels = [];
       let bacValues = [];
-      if (userDrinks.length === 0) return { timeLabels, bacValues };
-      let totalAlcohol = 0;
+
+      if (userDrinks.length === 0) {
+        return { timeLabels, bacValues };
+      }
+
       let earliestTime = userDrinks[0][2];
+      let totalAlcohol = 0;
 
-      userDrinks.forEach(drink => {
-        const [volume, strength, time] = drink;
-        const timeElapsed = (time - earliestTime) / 3600;
-        let old_bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-        if (old_bac < 0) old_bac = 0;
-        timeLabels.push(new Date(time * 1000));
-        bacValues.push(old_bac);
+      for (const [volume, strength, drinkTime] of userDrinks) {
+        const timeElapsed = (drinkTime - earliestTime) / 3600;
+        let oldBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsed);
+        if (oldBAC < 0) oldBAC = 0;
 
-        const alcoholInGrams = (volume * (strength / 100)) * 0.789;
+        timeLabels.push(new Date(drinkTime * 1000));
+        bacValues.push(oldBAC);
+
+        const alcoholInGrams = volume * (strength / 100) * 0.789;
         totalAlcohol += alcoholInGrams;
 
-        let bac = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-        if (bac < 0) bac = 0;
-        timeLabels.push(new Date(time * 1000));
-        bacValues.push(bac);
-      });
+        let newBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsed);
+        if (newBAC < 0) newBAC = 0;
 
-      const currentTime = Date.now() / 1000;
-      const timeElapsed = (currentTime - earliestTime) / 3600;
-      let currentBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809) - (metabolismRate * timeElapsed);
-      if (currentBAC < 0) currentBAC = 0;
-      timeLabels.push(new Date(currentTime * 1000));
-      bacValues.push(currentBAC);
+        timeLabels.push(new Date(drinkTime * 1000));
+        bacValues.push(newBAC);
+      }
+
+      const currentTimeSec = Math.floor(Date.now() / 1000);
+      const timeElapsed = (currentTimeSec - earliestTime) / 3600;
+      let finalBAC = (((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809)
+                     - (metabolismRate * timeElapsed);
+
+      if (finalBAC <= 0) {
+        const A = ((totalAlcohol / (bodyWeightInGrams * widmarkFactor)) * 100) * 0.809;
+        if (A > 0) {
+          const hoursToSober = A / metabolismRate;
+          const soberSec = earliestTime + (hoursToSober * 3600);
+          if (soberSec > (timeLabels[timeLabels.length - 1].getTime() / 1000) &&
+              soberSec < currentTimeSec) {
+            timeLabels.push(new Date(soberSec * 1000));
+            bacValues.push(0);
+          }
+          timeLabels.push(new Date(currentTimeSec * 1000));
+          bacValues.push(0);
+        } else {
+          timeLabels.push(new Date(currentTimeSec * 1000));
+          bacValues.push(0);
+        }
+      } else {
+        timeLabels.push(new Date(currentTimeSec * 1000));
+        bacValues.push(finalBAC);
+      }
 
       return { timeLabels, bacValues };
     }
 
-    // Initialize Chart.js with toned down curve tension (0.1 instead of 0.4)
+    // Initialize Chart.js
     var ctx = document.getElementById('myChart').getContext('2d');
     var myChart = new Chart(ctx, {
       type: 'line',
@@ -282,17 +361,17 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#fff' } }
+          legend: {
+            labels: { color: '#fff' }
+          }
         }
       }
     });
 
     // Function to trigger insane event animations when a new drink is added
     function animateDrinkEvent(username) {
-      // Blast that sound – because nothing says "Oi, you drunken muppet" like a beep!
       drinkSound.play();
 
-      // FLASH EFFECT: Create a full-screen flash
       let flash = document.getElementById('flash-overlay');
       flash.style.opacity = 1;
       anime({
@@ -302,7 +381,6 @@
         easing: 'easeOutQuad'
       });
 
-      // BANTER MESSAGE: Create a prominent, readable banter message that lasts 8 seconds
       let banterElem = document.createElement('div');
       banterElem.classList.add('banter-message');
       const banterMessages = [
@@ -315,11 +393,9 @@
       let message = banterMessages[Math.floor(Math.random() * banterMessages.length)];
       banterElem.innerText = message;
       document.body.appendChild(banterElem);
-      // Position the banter message near the center top
       banterElem.style.left = (window.innerWidth / 2 - 200) + 'px';
       banterElem.style.top = '100px';
       banterElem.style.opacity = 0;
-      // Animate the banter message: fade in, linger, then fade out (lasting 8 seconds)
       anime({
         targets: banterElem,
         opacity: [0, 1, 1, 0],
@@ -331,20 +407,17 @@
         }
       });
 
-      // MULTIPLE FLYING DRINKS: Spawn several flying drink elements with random delays
       for (let i = 0; i < 7; i++) {
-        let delay = Math.random() * 300; // random delay for extra chaos
+        let delay = Math.random() * 300;
         setTimeout(() => {
           let drinkElem = document.createElement('div');
           drinkElem.classList.add('flying-drink');
           drinkElem.innerText = '🍻';
           document.body.appendChild(drinkElem);
-          // Random starting position at bottom
           let startX = Math.random() * window.innerWidth;
           let startY = window.innerHeight;
           drinkElem.style.left = startX + 'px';
           drinkElem.style.top = startY + 'px';
-          // Animate each drink with random drift and rotation
           anime({
             targets: drinkElem,
             translateX: { value: (Math.random() - 0.5) * 300, duration: 1500 },
@@ -359,18 +432,15 @@
         }, delay);
       }
 
-      // EXPLOSION EFFECTS: Spawn several explosion elements around the center
       for (let j = 0; j < 5; j++) {
         let explosionElem = document.createElement('div');
         explosionElem.classList.add('explosion');
         explosionElem.innerText = '💥';
-        // Random position near center
         let posX = (window.innerWidth / 2) + (Math.random() - 0.5) * 300;
         let posY = (window.innerHeight / 2) + (Math.random() - 0.5) * 300;
         explosionElem.style.left = posX + 'px';
         explosionElem.style.top = posY + 'px';
         document.body.appendChild(explosionElem);
-        // Animate explosion: scale up and fade out
         anime({
           targets: explosionElem,
           scale: [0.5, 2],
@@ -384,15 +454,14 @@
       }
     }
 
-    // Auto-update function to update the chart and leaderboard – like your ever-shifting sobriety levels
+    // Auto-update function
     function autoUpdate() {
-      // Update datasets for each user
       for (const username in drinks) {
         const userDrinks = drinks[username];
-        // Expecting users object to be like: { username: [weight, gender] }
         const weight = users[username][0];
         const gender = users[username][1];
         const { timeLabels, bacValues } = calculateBACOverTime(username, userDrinks, weight, gender);
+
         if (timeLabels.length === 0) {
           let dataset = myChart.data.datasets.find(d => d.label === username);
           if (dataset) {
@@ -400,6 +469,7 @@
           }
           continue;
         }
+
         let dataset = myChart.data.datasets.find(d => d.label === username);
         if (!dataset) {
           if (!colormap[username]) colormap[username] = generateRandomColor();
@@ -408,7 +478,7 @@
             data: timeLabels.map((time, i) => ({ x: time, y: bacValues[i] })),
             borderColor: colormap[username],
             fill: false,
-            tension: 0.25,  // Toned down curves
+            tension: 0.25,
             borderWidth: 2,
             pointRadius: 2
           });
@@ -418,42 +488,43 @@
       }
       myChart.update();
 
-      // Update leaderboard display
       let leaderboard = document.getElementById("leaderboard");
       leaderboard.innerHTML = "";
-      let sorted_users = myChart.data.datasets.map(ds => ds.label).sort((a, b) => {
-        let bacA = myChart.data.datasets.find(ds => ds.label === a).data.slice(-1)[0].y || 0;
-        let bacB = myChart.data.datasets.find(ds => ds.label === b).data.slice(-1)[0].y || 0;
-        return bacB - bacA;
-      });
-      let header = document.createElement("div");
-      header.className = "leaderboard-header";
-      header.innerHTML = "User | BAC | Sobriety";
-      leaderboard.appendChild(header);
-      sorted_users.forEach(username => {
-        let dataset = myChart.data.datasets.find(ds => ds.label === username);
-        if (!dataset) return;
-        let bac = dataset.data.slice(-1)[0].y;
-        let sobrietyTime = new Date(Date.now() + (bac / 0.017) * 3600000)
-                              .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        let row = document.createElement("div");
-        row.className = "leaderboard-row";
-        row.innerHTML = `<span>${username}</span><span>${bac.toFixed(3)}</span><span>${sobrietyTime}</span>`;
-        leaderboard.appendChild(row);
-      });
+
+      if (myChart.data.datasets && myChart.data.datasets.length > 0) {
+        let userBacs = myChart.data.datasets.map(ds => {
+          let finalBAC = (ds.data && ds.data.length > 0) ? ds.data[ds.data.length - 1].y : 0;
+          return { username: ds.label, bac: finalBAC };
+        });
+        userBacs.sort((a, b) => b.bac - a.bac);
+
+        let header = document.createElement("div");
+        header.className = "leaderboard-header";
+        header.innerHTML = "User | BAC | Sobriety";
+        leaderboard.appendChild(header);
+
+        userBacs.forEach(item => {
+          let sobrietyTime = new Date(
+            Date.now() + (item.bac / 0.017) * 3600000
+          ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          let row = document.createElement("div");
+          row.className = "leaderboard-row";
+          row.innerHTML = `<span>${item.username}</span><span>${item.bac.toFixed(3)}</span><span>${sobrietyTime}</span>`;
+          leaderboard.appendChild(row);
+        });
+      }
     }
 
-    // Socket.IO – the lifeline of real-time chaos
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    // Socket.IO – real-time data
+    var socket = io.connect('https://' + document.location.hostname + ':' + location.port);
     socket.on('connect', function() {
       socket.emit('get_data');
     });
     socket.on('update_data', function(result) {
-      // Expecting result as [drinks, users]
       drinks = result[0];
       users = result[1];
 
-      // Check for new drinks per user and trigger the insane event animations if found
       for (const username in drinks) {
         let currentCount = drinks[username].length;
         if (!previousDrinksCount[username]) previousDrinksCount[username] = 0;
@@ -466,7 +537,7 @@
       autoUpdate();
     });
 
-    // Update every second so your graph stays as lively as your group’s banter
+    // Update the chart every second
     setInterval(autoUpdate, 1000);
   </script>
 </body>
