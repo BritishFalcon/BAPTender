@@ -250,54 +250,86 @@ async def update_user(user: User, group: Group):
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     token = websocket.query_params.get("token")
+    user_id_from_token = None  # Initialize
 
     if not token:
-        await websocket.close(code=status.WS_1002_POLICY_VIOLATION)
-        return
-
-    payload = jwt.decode(token.encode("utf-8"), SECRET, algorithms=[ALGORITHM], audience="fastapi-users:auth")
-    user_id = payload.get("sub")
-
-    """
-    try:
-        user = await get_user_ws(user_id)
-        group = await get_active_group_ws(user_id)
-    except Exception as e:
-        print(e)
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    """
-    user = await get_user_ws(user_id)
-    group = await get_active_group_ws(user_id)
-
-    if group:
-        if group.id not in group_connections:
-            group_connections[group.id] = {}
-        group_connections[group.id][user.id] = websocket
-    else:
-        if None not in group_connections:
-            group_connections[None] = {}
-        group_connections[None][user.id] = websocket
-
-    # Send initial state
-    state = await generate_initial_state(user, group)
-    await websocket.send_text(json.dumps(state, default=str))
 
     try:
+        payload = jwt.decode(token.encode("utf-8"), SECRET, algorithms=[ALGORITHM], audience="fastapi-users:auth")
+        user_id_from_token = payload.get("sub")  # Keep this as user_id_from_token
+
+        user = await get_user_ws(user_id_from_token)  # Use the decoded ID
+        if not user:  # User not found in DB
+            print(f"WebSocket Auth Error: User {user_id_from_token} not found in DB.")
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
+        group = await get_active_group_ws(user.id)  # Pass user.id (UUID)
+
+    except jwt.PyJWTError as e:  # Catch JWT errors (expired, invalid, etc.)
+        print(f"WebSocket JWT Error: {e}")
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    except Exception as e:  # Catch other exceptions during user/group fetch
+        print(f"WebSocket Setup Error: {e}")
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    # If we've reached here, user and group (if any) are fetched.
+    # Store user.id (which is a UUID) not user_id_from_token (which is a string from JWT sub)
+    # if you intend to use user.id as the key in group_connections.
+    # For simplicity, let's use user.id as it's consistently a UUID.
+    current_user_id = user.id
+
+    active_group_id = group.id if group else None  # Use a consistent key for the group_connections
+
+    if active_group_id not in group_connections:
+        group_connections[active_group_id] = {}
+    group_connections[active_group_id][current_user_id] = websocket
+    print(f"User {current_user_id} connected to group {active_group_id}.")
+
+    try:
+        # Send initial state
+        state = await generate_initial_state(user, group)
+        print(f"Attempting to send initial state to {current_user_id} in group {active_group_id}...")
+        await websocket.send_text(json.dumps(state, default=str))
+        print(f"Initial state sent to {current_user_id}.")
+
+        # Main loop for receiving messages (if your app needs bi-directional)
+        # If it's mostly server-to-client, this loop might just await client messages or pings.
         while True:
-            data = await websocket.receive_json()
-            await websocket.send_text(f"Message text was: {data}")
+            # This part depends on whether you expect messages from the client
+            # If not, you might just have a `await asyncio.sleep(1)` or similar to keep alive
+            # or handle pings. For now, let's assume it might receive data.
+            try:
+                data = await websocket.receive_text()  # Or receive_json()
+                print(f"Received from {current_user_id}: {data}")
+                # Example: Echo back or process data
+                # await websocket.send_text(f"Server received: {data}")
+            except WebSocketDisconnect:  # This catches disconnects during receive_text/json
+                print(f"WebSocketDisconnect caught during receive for user {current_user_id}.")
+                break  # Exit the while loop to proceed to cleanup
+            except Exception as e_loop:  # Catch other errors inside the loop
+                print(f"Error in WebSocket loop for user {current_user_id}: {e_loop}")
+                break  # Exit loop on other errors too
 
-    except WebSocketDisconnect:
-        if group:
-            if group.id in group_connections and user.id in group_connections[group.id]:
-                del group_connections[group.id][user.id]
-
-            if group in group_connections and not group_connections[group.id]:
-                del group_connections[group.id]
-        else:
-            if None in group_connections and user.id in group_connections[None]:
-                del group_connections[None][user.id]
-
-            if None in group_connections and not group_connections[None]:
-                del group_connections[None]
+    except WebSocketDisconnect:  # Catches disconnects specifically (e.g., if send_text above failed)
+        print(
+            f"WebSocketDisconnect caught for user {current_user_id} (likely during initial send or if loop broke cleanly).")
+    except Exception as e_outer:  # Catch any other unexpected errors
+        print(f"Outer exception for user {current_user_id}: {e_outer}")
+        # Try to close gracefully if possible, though connection might already be dead
+        try:
+            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+        except Exception:
+            pass  # Ignore errors during this close attempt
+    finally:
+        # Cleanup logic (this will run if the try block completes or if an exception caused an exit)
+        print(f"Cleaning up connection for user {current_user_id} from group {active_group_id}.")
+        if active_group_id in group_connections and current_user_id in group_connections[active_group_id]:
+            del group_connections[active_group_id][current_user_id]
+            if not group_connections[active_group_id]:  # If group is now empty
+                del group_connections[active_group_id]
+        print(f"User {current_user_id} fully disconnected.")

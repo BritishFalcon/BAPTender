@@ -117,7 +117,6 @@ body {
 /* Glitch Effect for Title (from OG, adapted) */
 .glitch {
   position: relative;
-  font-size: 3rem; /* Tailwind: text-5xl or text-6xl */
   line-height: 1;
   font-family: 'VT323', monospace; /* Or Orbitron if preferred */
   text-transform: uppercase;
@@ -245,4 +244,76 @@ body {
 }
 .themed-table td {
   @apply px-4 py-3 whitespace-nowrap text-sm;
+}
+
+/* app/globals.css */
+
+/* ... your existing theme variables and other global styles ... */
+
+/* Epoch Chart Theming Overrides */
+.epoch-chart-container .epoch { /* Add a wrapper for better specificity if needed */
+  /* Background of the chart plotting area - try to match card or be transparent */
+  /* Epoch might have its own background settings, this is for the SVG container */
+}
+
+.epoch-chart-container .epoch .axis path,
+.epoch-chart-container .epoch .axis line {
+  fill: none;
+  stroke: var(--text-color); /* Color of axis lines */
+  opacity: 0.7;
+  shape-rendering: crispEdges;
+}
+
+.epoch-chart-container .epoch .axis text {
+  fill: var(--text-color); /* Color of axis labels/ticks */
+  font-family: 'Share Tech Mono', monospace; /* Match your theme font */
+  font-size: 10px; /* Adjust as needed */
+  opacity: 0.9;
+}
+
+.epoch-chart-container .epoch .line {
+  fill: none;
+  stroke-width: 2px;
+  /* Default line color, will be overridden by series-specific color if set in JS */
+  stroke: var(--primary-color);
+}
+
+.epoch-chart-container .epoch .area {
+  /* Default area fill color, can be overridden by series-specific color */
+  fill: var(--primary-color);
+  opacity: 0.2; /* Make area fills more subtle */
+}
+
+/* You'll need to define colors for each series if you want them to differ */
+/* Epoch uses classes like .epoch .line.category0, .epoch .line.category1 etc. */
+/* Or you can pass colors directly in the data to Epoch in Graph.tsx */
+.epoch-chart-container .epoch .line.category0,
+.epoch-chart-container .epoch .area.category0 {
+  stroke: var(--primary-color); /* Example for first series */
+}
+.epoch-chart-container .epoch .area.category0 {
+  fill: var(--primary-color);
+}
+
+.epoch-chart-container .epoch .line.category1,
+.epoch-chart-container .epoch .area.category1 {
+  stroke: var(--accent-color); /* Example for second series */
+}
+.epoch-chart-container .epoch .area.category1 {
+  fill: var(--accent-color);
+}
+
+/* Add more .categoryN rules if you have more lines and want unique colors from theme */
+
+.epoch-chart-container .epoch .tooltip {
+  /* Style the tooltip that appears on hover */
+  position: absolute;
+  z-index: 10;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: var(--card-bg); /* Use card background for tooltip */
+  border: 1px solid var(--accent-color);
+  color: var(--text-color);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }

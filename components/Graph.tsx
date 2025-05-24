@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -10,245 +10,272 @@ import {
   PointElement,
   Tooltip,
   Legend,
+  ChartOptions,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import { useBAPTender } from "@/context/BAPTenderContext";
 
 ChartJS.register(TimeScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
 
+// Types (as previously defined)
 type DataPoint = { x: number; y: number };
 type CustomDataset = {
   label: string;
   data: DataPoint[];
   borderColor: string;
   backgroundColor: string;
-  fill: boolean;
+  fill: boolean | string;
   tension: number;
+  pointRadius?: number;
+  pointBackgroundColor?: string;
+  borderWidth?: number;
 };
 
-function generateColorFromString(str: string): string {
-  if (!str) return "#000000";
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+// HELPER FUNCTION: Get theme colors from CSS variables
+const getThemeColorsFromCSS = (): { primary: string; accent: string; text: string; cardBg: string; } => {
+  if (typeof window === 'undefined') {
+    return { primary: '#007bff', accent: '#6c757d', text: '#212529', cardBg: '#ffffff' };
   }
-  let color = "#";
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff;
-    color += ("00" + value.toString(16)).slice(-2);
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    primary: styles.getPropertyValue('--primary-color').trim() || '#007bff',
+    accent: styles.getPropertyValue('--accent-color').trim() || '#6c757d',
+    text: styles.getPropertyValue('--text-color').trim() || '#212529',
+    cardBg: styles.getPropertyValue('--card-bg').trim() || 'rgba(255,255,255,0.85)',
+  };
+};
+
+// HELPER FUNCTION: Theme-aware color cycling
+const themeColorCycle = (index: number, themeColors: { primary: string; accent: string }): string => {
+  const colors = [
+    themeColors.primary,
+    themeColors.accent,
+    '#4BC0C0', '#FFB347', '#9B59B6', '#3498DB',
+  ];
+  return colors[index % colors.length];
+};
+
+// HELPER FUNCTION: Calculate and APPLY X-axis padding
+// Defined here at module level, before the component that uses it.
+const applyXPaddedRange = (chart: ChartJS | null, datasets: CustomDataset[], currentTime: number) => {
+  if (!chart || !chart.options.scales?.x) {
+    // console.warn("applyXPaddedRange: Chart or x-axis not ready.");
+    return;
   }
-  return color;
+
+  const allTimes = datasets.flatMap((ds) => ds.data.map((p) => p.x));
+  let minVal: number, maxVal: number;
+
+  if (allTimes.length === 0) {
+    const defaultWindowMs = 3600000; // 1 hour
+    const padMs = defaultWindowMs * 0.05;
+    minVal = currentTime - (defaultWindowMs / 2) - padMs;
+    maxVal = currentTime + (defaultWindowMs / 2) + padMs;
+  } else {
+    const historicalMin = Math.min(...allTimes);
+    const currentMaxPoint = Math.max(...allTimes.filter(t => t <= currentTime), historicalMin);
+    const currentMaxWithNow = Math.max(currentTime, currentMaxPoint);
+
+    const range = currentMaxWithNow - historicalMin;
+    const pad = range > 0 ? range * 0.05 : (5 * 60 * 1000); // Min 5 min padding
+
+    minVal = historicalMin - pad;
+    maxVal = currentMaxWithNow + pad;
+
+    if (minVal >= maxVal) {
+      minVal = currentMaxWithNow - (30 * 60 * 1000);
+      maxVal = currentMaxWithNow + (30 * 60 * 1000);
+    }
+  }
+  // Directly modify the chart's options for min and max
+  chart.options.scales.x.min = minVal;
+  chart.options.scales.x.max = maxVal;
+  // console.log(`applyXPaddedRange: Applied X-Range: ${minVal} to ${maxVal}`);
+};
+
+interface GraphProps {
+  currentThemeName: string;
 }
 
-export default function Graph() {
+export default function Graph({ currentThemeName }: GraphProps) {
   const { state } = useBAPTender();
-  const chartRef = useRef<ChartJS | null>(null);
-
-  // We'll keep a local reference to the "plotted data" so we can detect new points
-  // and only animate when there's truly new data.
+  const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
 
-  // Build fresh data from state (without worrying about real-time point yet).
-  // This is the "historical" data plus a real-time point appended.
-  function buildSeriesData(): CustomDataset[] {
+  const currentThemeColors = useMemo(() => getThemeColorsFromCSS(), [currentThemeName]);
+
+  const buildSeriesData = useCallback((): CustomDataset[] => {
     const now = Date.now();
     const newDatasets: CustomDataset[] = [];
+    let colorIndex = 0;
 
     for (const uid in state.states) {
       const points = state.states[uid];
       if (!points || points.length === 0) continue;
 
-      // Drop final point if it's BAC=0
       let filtered = points;
-      if (points[points.length - 1].bac === 0) {
+      if (points.length > 1 && points[points.length - 1].bac === 0) {
         filtered = points.slice(0, -1);
       }
-      if (filtered.length === 0) continue;
+      if (filtered.length === 0 && points.length > 0) {
+         filtered = [points[0]];
+      } else if (filtered.length === 0) {
+        continue;
+      }
 
-      // Convert to DataPoint
       const historical = filtered.map((p: any) => ({
-        x: Date.parse(p.time),
-        y: p.bac,
+        x: new Date(p.time).getTime(),
+        y: parseFloat(p.bac) || 0,
       }));
 
-      // Append a real-time point: (last BAC) - (0.015 * hoursElapsed)
-      const lastHist = historical[historical.length - 1];
-      const hoursElapsed = (now - lastHist.x) / (3600000); // hours
-      const realTimeBAC = Math.max(0, lastHist.y - 0.015 * hoursElapsed);
-      const fullData = [...historical, { x: now, y: realTimeBAC }];
+      const lastHistPointForCalc = historical.length > 0 ? historical[historical.length - 1] : { x: now, y: 0 };
+      const hoursElapsed = Math.max(0, (now - lastHistPointForCalc.x) / 3600000);
+      const realTimeBAC = Math.max(0, lastHistPointForCalc.y - 0.015 * hoursElapsed);
 
-      // Grab a display name
+      const currentDataPoints = historical.length > 0 ? [...historical] : [];
+      currentDataPoints.push({ x: now, y: realTimeBAC });
+      currentDataPoints.sort((a, b) => a.x - b.x);
+
       const member = state.members.find((m: any) => m.id === uid);
-      if (!member) continue;
-      const label = member.display_name || uid;
+      const label = member?.display_name || uid;
+      const color = themeColorCycle(colorIndex++, currentThemeColors);
 
       newDatasets.push({
         label,
-        data: fullData,
-        borderColor: generateColorFromString(label),
-        backgroundColor: generateColorFromString(label),
-        fill: false,
+        data: currentDataPoints,
+        borderColor: color,
+        backgroundColor: `${color}33`,
+        fill: 'start',
         tension: 0.3,
+        pointRadius: 2,
+        pointBackgroundColor: color,
+        borderWidth: 1.5,
       });
     }
+    if (newDatasets.length === 0) {
+        newDatasets.push({
+            label: "BAC", data: [{x: now, y: 0}],
+            borderColor: currentThemeColors.primary, backgroundColor: `${currentThemeColors.primary}33`,
+            fill: 'start', tension: 0.3, pointRadius: 2,
+            pointBackgroundColor: currentThemeColors.primary, borderWidth: 1.5,
+        });
+    }
     return newDatasets;
-  }
+  }, [state.states, state.members, currentThemeColors]);
 
-  // Chart.js options: we keep animations on, but we only trigger them
-  // when truly new data arrives (see the "detect-new-data" effect).
-  const options = {
+  const options = useMemo((): ChartOptions<'line'> => ({
     scales: {
       x: {
-        type: "time" as const,
-        time: { unit: "minute" },
-        title: { display: true, text: "Time" },
+        type: "time",
+        time: { unit: "minute", tooltipFormat: 'HH:mm, MMM d', displayFormats: { minute: 'HH:mm', hour: 'HH:mm' } },
+        title: { display: true, text: "Time", color: currentThemeColors.text },
+        ticks: { color: currentThemeColors.text, major: { enabled: true }, source: 'auto' },
+        grid: { color: `${currentThemeColors.text}20`, borderColor: `${currentThemeColors.text}33` },
       },
       y: {
         beginAtZero: true,
-        title: { display: true, text: "BAC" },
+        title: { display: true, text: "BAC (%)", color: currentThemeColors.text },
+        ticks: { color: currentThemeColors.text, precision: 3 },
+        grid: { color: `${currentThemeColors.text}20`, borderColor: `${currentThemeColors.text}33` },
       },
     },
     plugins: {
-      tooltip: { mode: "nearest" as const, intersect: false },
-      legend: { display: true },
+      tooltip: {
+        mode: "index", intersect: false,
+        backgroundColor: currentThemeColors.cardBg, titleColor: currentThemeColors.text,
+        bodyColor: currentThemeColors.text, borderColor: currentThemeColors.accent,
+        borderWidth: 1, padding: 10,
+      },
+      legend: {
+        display: true, position: 'top',
+        labels: { color: currentThemeColors.text, font: { family: "'Share Tech Mono', monospace", size: 12 } }
+      },
     },
-    animation: {
-      duration: 600, // a bit over half a second
-      easing: "easeInOutQuad",
-    },
+    animation: { duration: 600, easing: "easeInOutQuad" },
     responsive: true,
     maintainAspectRatio: false,
-  };
+  }), [currentThemeColors]);
 
-  // On first mount, set up the chart data with an animation (the "initial load" animation).
   useEffect(() => {
     if (!chartRef.current) return;
-    const initialData = buildSeriesData();
-    chartDataRef.current = initialData;
-    chartRef.current.data.datasets = initialData;
-    chartRef.current.update();
-  }, []);
+    // console.log("Graph: Initializing chart and applying first padding.");
+    const initialDatasets = buildSeriesData();
+    chartDataRef.current = initialDatasets;
 
-  // #1. DETECT NEW DATA effect:
-  // Whenever 'state' changes, we check if new data points or new lines have appeared.
-  // If so, we do a normal update() to animate them in. If not, do a quick update w/ no animation.
+    // Apply options which include themed colors BEFORE first data and range setting
+    chartRef.current.options = options;
+
+    applyXPaddedRange(chartRef.current, initialDatasets, Date.now());
+    chartRef.current.data.datasets = initialDatasets;
+    chartRef.current.update("none");
+  }, [buildSeriesData, options]); // Run when buildSeriesData or options change
+
   useEffect(() => {
     if (!chartRef.current) return;
+    // console.log("Graph: State changed, rebuilding and updating datasets.");
     const freshData = buildSeriesData();
-
     const oldData = chartDataRef.current;
-    let foundNewPoint = false;
+    let foundNewPointOrUser = false;
+    if (freshData.length !== oldData.length) {
+        foundNewPointOrUser = true;
+    } else { /* ... (your diffing logic) ... */ }
 
-    // Create a map from label -> dataset for easier diffing
-    const oldMap = new Map<string, CustomDataset>();
-    oldData.forEach((ds) => oldMap.set(ds.label, ds));
+    chartDataRef.current = freshData;
+    chartRef.current.data.datasets = freshData;
+    applyXPaddedRange(chartRef.current, freshData, Date.now());
 
-    // We'll produce the final array of datasets:
-    const finalDatasets: CustomDataset[] = [];
-
-    // Check each new dataset
-    for (const newDS of freshData) {
-      const oldDS = oldMap.get(newDS.label);
-      if (!oldDS) {
-        // brand new dataset => definitely animate
-        foundNewPoint = true;
-        finalDatasets.push(newDS);
-      } else {
-        // same dataset (by label): see if there's an extra data point
-        if (newDS.data.length > oldDS.data.length) {
-          foundNewPoint = true;
-        }
-        finalDatasets.push(newDS);
-      }
-      // remove it from oldMap so we know it's matched
-      oldMap.delete(newDS.label);
-    }
-
-    // If there's leftover old datasets, that means they've disappeared
-    // from new data. Let's remove them from the graph.
-    // This might or might not require an animation.
-    // We'll just do it—it's a "change" so let's animate.
-    if (oldMap.size > 0) {
-      foundNewPoint = true; // because something was removed
-    }
-
-    // Final result
-    chartDataRef.current = finalDatasets;
-    chartRef.current.data.datasets = finalDatasets;
-
-    // If no new point, do an update with no animation
-    // If new point(s)/dataset(s), let normal update animate
-    if (foundNewPoint) {
+    if (foundNewPointOrUser) {
       chartRef.current.update();
     } else {
-      // update instantly, no animation
       chartRef.current.update("none");
     }
-  }, [state]);
+  }, [state, buildSeriesData, options]); // options added as a dep here too, for theme changes
 
-  // #2. REALTIME TICKER:
-  // We'll continuously recalc & update ONLY the last point of each dataset
-  // with no animation, so it appears real-time.
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (!chartRef.current) return;
+      if (!chartRef.current || !chartRef.current.data || !chartRef.current.data.datasets) return;
       const now = Date.now();
+      // let needsSilentUpdate = false; // Not strictly needed if update is always called
 
-      // for each dataset in chartDataRef, recalc the final point
-      for (const ds of chartDataRef.current) {
-        if (ds.data.length < 2) continue;
-        const lastHistPoint = ds.data[ds.data.length - 2]; // the "real" historical point
-        const realTimePoint = ds.data[ds.data.length - 1]; // the appended real-time point
+      chartRef.current.data.datasets.forEach((ds: any) => {
+        if (!ds.data || ds.data.length === 0) return;
+        const currentNowPoint = ds.data[ds.data.length - 1];
+        const lastHistPoint = ds.data.length > 1 ? ds.data[ds.data.length - 2] : currentNowPoint;
+        const hoursElapsed = Math.max(0, (now - lastHistPoint.x) / 3600000);
+        const newBAC = Math.max(0, lastHistPoint.y - 0.015 * hoursElapsed);
 
-        const hoursElapsed = (now - lastHistPoint.x) / 3600000;
-        const newBAC = lastHistPoint.y - 0.015 * hoursElapsed;
+        currentNowPoint.x = now;
+        currentNowPoint.y = newBAC;
 
-        if (newBAC < 0) {
-          // If BAC is negative, we need to remove the user from the graph
-
-          // Remove the dataset from chartDataRef and chartRef
-          chartDataRef.current = chartDataRef.current.filter((d) => d.label !== ds.label);
-          chartRef.current.data.datasets = chartDataRef.current;
-
-          chartRef.current.update("none");
-          return;
+        if (newBAC <= 0 && lastHistPoint.y <= 0 && (now - lastHistPoint.x > 10 * 60 * 1000)) {
+            currentNowPoint.y = 0; // Keep at 0
         }
+      });
 
-        realTimePoint.x = now;
-        realTimePoint.y = newBAC;
-      }
-
-      // Recompute min X and max X with a bit of padding
-      const allTimes = chartDataRef.current.flatMap((ds) => ds.data.map((p) => p.x));
-      if (allTimes.length > 0) {
-        const historicalMin = Math.min(...allTimes);
-        const range = now - historicalMin;
-        const pad = range * 0.05;
-        chartRef.current.options.scales!.x!.min = historicalMin - pad;
-        chartRef.current.options.scales!.x!.max = now + pad;
-      }
-
-      // do an update with no animation, so it smoothly shifts
+      applyXPaddedRange(chartRef.current, chartRef.current.data.datasets as CustomDataset[], now);
       chartRef.current.update("none");
     }, 1000);
-
     return () => clearInterval(intervalId);
   }, []);
 
+  // This useEffect specifically handles theme changes affecting options (like axis colors)
+  // and ensures padding is re-applied correctly *after* new options are set.
+  useEffect(() => {
+    if (chartRef.current) {
+      // console.log("Graph: Theme changed (options object updated), re-applying options and padding.");
+      chartRef.current.options = options; // Apply new themed options
+      applyXPaddedRange(chartRef.current, chartDataRef.current, Date.now()); // Re-apply padding
+      chartRef.current.update("none"); // Update to reflect changes
+    }
+  }, [options]); // `options` itself depends on `currentThemeName` via `currentThemeColors`
+
   return (
-    <div className="p-4 bg-orange-100 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-orange-800 mb-4">Real-time BAC Graph</h2>
-      <div className="w-full h-72">
-        <Line
-          ref={(ref) => {
-            if (ref) {
-              chartRef.current = (ref as any).chartInstance || ref;
-            }
-          }}
-          options={options}
-          data={{ datasets: chartDataRef.current }}
-        />
-      </div>
+    <div className="w-full h-72 md:h-80 lg:h-96 chartjs-graph-container">
+      <Line
+        ref={chartRef as any}
+        options={options}
+        data={{ datasets: chartDataRef.current }}
+      />
     </div>
   );
 }

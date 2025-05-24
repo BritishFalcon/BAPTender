@@ -13,30 +13,32 @@ export default function Header({ onThemeToggle, currentThemeName }: HeaderProps)
   return (
     <header className="p-4 shadow-lg" style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border-color)' }}>
       <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          {/* Replace with actual logo or styled text */}
-          <div
-            className="glitch text-3xl cursor-pointer"
-            data-text="BAP"
-            onClick={onThemeToggle} // Or a dedicated theme button
-            title={`Toggle Theme (Current: ${currentThemeName.replace('theme-','')})`}
-          >
-            BAP
-          </div>
+
+        {/* CHILD 1: Left Aligned Wrapper */}
+        {/* flex-1 makes it take up 1/3 of the space. justify-start aligns the content inside it to the left. */}
+        <div className="flex-1 flex justify-start">
           <GroupsWidget />
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Example Theme Toggle Button - can be styled better */}
-          <button
+        {/* CHILD 2: Centered */}
+        {/* This div is just for the logo itself. It won't grow or shrink. */}
+        <div className="flex-shrink-0">
+          <div
+            className="text-4xl cursor-pointer"
+            data-text="BAPTENDER"
             onClick={onThemeToggle}
-            className="themed-button text-xs p-2"
-            title="Toggle Theme"
+            title={`Toggle Theme (Current: ${currentThemeName.replace('theme-','')})`}
           >
-            🎨 {currentThemeName.replace('theme-', '')}
-          </button>
+            BAPTENDER
+          </div>
+        </div>
+
+        {/* CHILD 3: Right Aligned Wrapper */}
+        {/* flex-1 again to take up equal space. justify-end aligns the content inside it to the right. */}
+        <div className="flex-1 flex justify-end">
           <AccountWidget />
         </div>
+
       </div>
     </header>
   );
