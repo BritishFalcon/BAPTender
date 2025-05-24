@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,12 +15,14 @@ from api.group.schemas import GroupCreate, GroupRead, GroupMember
 from api.group.utils import generate_invite_token, decode_invite_token
 from api.auth.models import User
 
-from typing import Optional
 from fastapi import Query
+
+from api.realtime.router import update_user
 
 router = APIRouter()
 
 # TODO: Handle state update on any change of group membership (switch, new, new/active member etc)
+# TODO: Move group states into states as to trigger updates on changes
 
 
 @router.post("/create", response_model=GroupRead)
@@ -61,6 +64,8 @@ async def create_group(
     except IntegrityError:
         await session.rollback()
         raise HTTPException(status_code=400, detail="Group name already exists.")
+
+    asyncio.create_task(update_user(user, group))
 
     return group
 
@@ -106,6 +111,8 @@ async def switch_group(
 
     if not group:
         raise HTTPException(status_code=404, detail="Group not found.")
+
+    asyncio.create_task(update_user(user, group))
 
     return group
 
@@ -182,6 +189,40 @@ async def invite_link(
     return {"invite_link": f"{HOST_URL}/group/invite/{token}"}
 
 
+# For public groups
+@router.post("/join/{group_id}", response_model=GroupRead)
+async def join_group_public(
+    group_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # Check if user is already in group
+    result = await session.execute(
+        select(UserGroup)
+        .where(UserGroup.user_id == user.id, UserGroup.group_id == group_id)
+    )
+    existing = result.scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="User is already a member.")
+
+    # Check if group exists
+    group_result = await session.execute(select(Group).where(Group.id == group_id))
+    group = group_result.scalar_one_or_none()
+    if not group:
+        raise HTTPException(status_code=404, detail="Group does not exist.")
+    if not group.public:
+        raise HTTPException(status_code=400, detail="Group is private — no join allowed.")
+
+    # Join
+    user_group = UserGroup(user_id=user.id, group_id=group_id, active=True)
+    session.add(user_group)
+    await session.commit()
+
+    asyncio.create_task(update_user(user, group))
+
+    return group
+
+
 @router.get("/invite/{token}", response_model=GroupRead)
 async def join_group(
     token: str,
@@ -214,6 +255,8 @@ async def join_group(
     user_group = UserGroup(user_id=user.id, group_id=group_id, active=True)
     session.add(user_group)
     await session.commit()
+
+    asyncio.create_task(update_user(user, group))
 
     return group
 
@@ -257,7 +300,6 @@ async def get_group_members(
     ]
 
 
-
 @router.post("/leave/{group_id}")
 async def leave_group(
     group_id: uuid.UUID,
@@ -293,6 +335,8 @@ async def leave_group(
     # Non-owner just leaves
     await session.delete(user_group)
     await session.commit()
+
+    asyncio.create_task(update_user(user, group))
     return {"detail": "Left group."}
 
 
@@ -314,6 +358,8 @@ async def delete_group(
     await session.execute(delete(UserGroup).where(UserGroup.group_id == group_id))
     await session.execute(delete(Group).where(Group.id == group_id))
     await session.commit()
+
+    asyncio.create_task(update_user(user, group))
     return {"detail": "Deleted group."}
 
 
@@ -343,4 +389,6 @@ async def kick_user(
     # Kick user
     await session.delete(target_membership)
     await session.commit()
+
+    asyncio.create_task(update_user(user, group))
     return {"detail": "Kicked user."}

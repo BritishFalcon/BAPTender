@@ -60,7 +60,7 @@ async def generate_initial_state(user: User, group: Group | None):
             }
             drinks_by_user.setdefault(str(d.user_id), []).append(entry)
 
-        # Members list
+        # Members list TODO: Change this to a dict
         members = []
         for u in relevant_users:
             members.append({
@@ -124,6 +124,56 @@ async def generate_initial_state(user: User, group: Group | None):
 import json
 import logging
 from datetime import datetime, timezone
+
+
+async def push_update(user_id: UUID):
+    async for session in get_async_session():
+        # Fetch the user's group
+        result = await session.execute(
+            select(UserGroup).where(
+                (UserGroup.user_id == user_id) & (UserGroup.active == True)
+            )
+        )
+        user_group = result.scalars().one_or_none()
+
+        if not user_group:
+            return
+
+        # Fetch drinks
+        result = await session.execute(
+            select(Drink).where(Drink.user_id == user_id)
+        )
+        drinks = result.scalars().all()
+
+        # Format drinks
+        format_drinks = []
+        for d in drinks:
+            entry = {
+                "id": str(d.id),
+                "nickname": d.nickname,
+                "volume": d.volume,
+                "strength": d.strength,
+                "time": d.add_time,
+            }
+            format_drinks.append(entry)
+
+        # Prepare update
+        update = {
+            "type": "update",
+            "user": str(user_id),
+            "drinks": format_drinks,
+        }
+
+        # Send update to all users in the active group
+        group_id = user_group.group_id
+        if group_id in group_connections:
+            for ws in group_connections[group_id].values():
+                try:
+                    await ws.send_text(json.dumps(update, default=str))
+                except RuntimeError as e:
+                    logging.warning(f"WebSocket for user {user_id} is closed: {e}")
+                    del group_connections[group_id][user_id]
+
 
 async def update_user(user: User, group: Group):
     print("Updating user")
@@ -202,12 +252,13 @@ async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
 
     if not token:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        await websocket.close(code=status.WS_1002_POLICY_VIOLATION)
         return
 
     payload = jwt.decode(token.encode("utf-8"), SECRET, algorithms=[ALGORITHM], audience="fastapi-users:auth")
     user_id = payload.get("sub")
 
+    """
     try:
         user = await get_user_ws(user_id)
         group = await get_active_group_ws(user_id)
@@ -215,6 +266,9 @@ async def websocket_endpoint(websocket: WebSocket):
         print(e)
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
+    """
+    user = await get_user_ws(user_id)
+    group = await get_active_group_ws(user_id)
 
     if group:
         if group.id not in group_connections:

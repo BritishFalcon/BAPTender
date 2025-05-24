@@ -12,7 +12,8 @@ export default function LoginForm({ onLogin }: { onLogin: (token: string) => voi
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/jwt/login", {
+      // CORRECTED URL
+      const res = await fetch("/api/auth/jwt/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username: email, password }),
@@ -28,33 +29,43 @@ export default function LoginForm({ onLogin }: { onLogin: (token: string) => voi
       onLogin(data.access_token);
     } catch (err) {
       console.error("Login error:", err);
-      setError("Something went wrong.");
+      setError("Something went terribly wrong, as usual.");
     }
   }
 
   return (
-    <form onSubmit={handleLogin}>
-      <h2>Login</h2>
-
-      <input
-        type="email"
-        placeholder="Email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        required
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <button type="submit">Login</button>
+    <form onSubmit={handleLogin} className="space-y-var(--base-spacing)">
+      <h2 className="text-2xl font-bold font-vt323 text-center mb-var(--base-spacing)" style={{color: 'var(--accent-color)'}}>
+        Access Terminal
+      </h2>
+      <div>
+        <label htmlFor="loginEmail" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>Email</label>
+        <input
+          id="loginEmail"
+          type="email"
+          placeholder="your.soul@example.com"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="themed-input"
+        />
+      </div>
+      <div>
+        <label htmlFor="loginPassword" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>Password</label>
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="SuperSecretPassword123!"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="themed-input"
+        />
+      </div>
+      {error && <p className="text-sm font-sharetech text-red-500">{error}</p>}
+      <button type="submit" className="themed-button w-full font-vt323 text-lg">
+        Login
+      </button>
     </form>
   );
 }

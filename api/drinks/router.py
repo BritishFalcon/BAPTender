@@ -19,6 +19,7 @@ router = APIRouter()
 # TODO: Pushing new information back to users on changes - also need for changing User info as this will impact BAC calculations
 
 
+@router.post("", response_model=DrinkRead)
 @router.post("/", response_model=DrinkRead)
 async def create_drink(
     drink: DrinkCreate,

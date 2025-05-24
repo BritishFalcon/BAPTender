@@ -1,5 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from api.auth.deps import current_active_user
 from api.core.db import get_async_session
 from api.auth.models import User
@@ -12,9 +14,12 @@ async def get_active_group(
     session: AsyncSession = Depends(get_async_session),
 ):
     result = await session.execute(
-        select(UserGroup).where(UserGroup.user_id == user.id, UserGroup.active == True)
+        select(UserGroup)
+        .options(selectinload(UserGroup.group))
+        .where(
+            UserGroup.user_id == user.id,
+            UserGroup.active.is_(True),
+        )
     )
     user_group = result.scalars().first()
-    if not user_group:
-        return None
-    return user_group.group
+    return user_group.group if user_group else None

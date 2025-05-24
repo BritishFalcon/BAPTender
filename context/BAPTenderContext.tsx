@@ -116,7 +116,9 @@ export function BAPTenderProvider({
     }
 
     console.log("Opening WS with token:", token);
-    const wsUrl = `ws://localhost:8000/realtime/ws?token=${encodeURIComponent(token)}`;
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsHost = window.location.host;
+    const wsUrl = `${wsScheme}://${wsHost}/api/realtime/ws?token=${encodeURIComponent(token)}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

@@ -1,14 +1,248 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Optional dark mode support (works with Tailwind `dark:` variants) */
 :root {
-  color-scheme: light;
+  /* Base Spacing (inspired by OG) */
+  --base-spacing: 1rem; /* 16px */
+  --golden-spacing: calc(var(--base-spacing) * 1.618);
+  --small-spacing: calc(var(--base-spacing) / 2);
+  --large-spacing: calc(var(--base-spacing) * 2);
+
+  /* Default Theme (OG) applied to body by default */
+  --bg-color: #f8f9fa;
+  --text-color: #212529;
+  --primary-color: #007bff;
+  --accent-color: #6c757d;
+  --card-bg: rgba(255, 255, 255, 0.85); /* Slightly transparent */
+  --card-border-color: var(--accent-color);
+  --card-shadow-color: var(--accent-color);
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --input-text: #495057;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: var(--accent-color);
 }
 
 body {
-  @apply text-black bg-white;
-  /* OR fallback manual if you're not using @apply: */
-  /* color: black; background-color: white; */
+  font-family: 'Orbitron', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.6s ease-in-out, color 0.6s ease-in-out;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden; /* Prevent horizontal scroll from glitch effects */
+}
+
+/* Theme Overrides */
+.theme-og { /* Explicit OG theme class */
+  --bg-color: #f8f9fa;
+  --text-color: #212529;
+  --primary-color: #007bff;
+  --accent-color: #6c757d;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border-color: var(--accent-color);
+  --card-shadow-color: var(--accent-color);
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --input-text: #495057;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: var(--accent-color);
+}
+
+.theme-dark {
+  --bg-color: #141414;
+  --text-color: #fafafa;
+  --primary-color: #90baf9;
+  --accent-color: #6effd5;
+  --card-bg: rgba(30, 30, 30, 0.75); /* More opaque for dark */
+  --card-border-color: var(--accent-color);
+  --card-shadow-color: var(--accent-color);
+  --input-bg: #2d2d2d;
+  --input-border: #555555;
+  --input-text: #fafafa;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #141414;
+  --button-primary-hover-bg: var(--accent-color);
+}
+
+.theme-cyber {
+  --bg-color: #000000;
+  --text-color: #00ff9c;
+  --primary-color: #00b3ff;
+  --accent-color: #ff00e0;
+  --card-bg: rgba(0, 20, 0, 0.7); /* Dark green tint, more opaque */
+  --card-border-color: var(--accent-color);
+  --card-shadow-color: var(--accent-color);
+  --input-bg: #0a0a0a;
+  --input-border: var(--primary-color);
+  --input-text: #00ff9c;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #000000;
+  --button-primary-hover-bg: var(--accent-color);
+}
+
+.theme-neon {
+  --bg-color: #0f0f0f;
+  --text-color: #ffff00;
+  --primary-color: #ff00e6;
+  --accent-color: #00ffd2;
+  --card-bg: rgba(20, 0, 20, 0.65); /* Dark magenta tint, more opaque */
+  --card-border-color: var(--accent-color);
+  --card-shadow-color: var(--accent-color);
+  --input-bg: #1a1a1a;
+  --input-border: var(--primary-color);
+  --input-text: #ffff00;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #0f0f0f;
+  --button-primary-hover-bg: var(--accent-color);
+}
+
+
+/* Particle Background Styling */
+#particles-js-container {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Behind all content */
+  top: 0;
+  left: 0;
+}
+
+/* Glitch Effect for Title (from OG, adapted) */
+.glitch {
+  position: relative;
+  font-size: 3rem; /* Tailwind: text-5xl or text-6xl */
+  line-height: 1;
+  font-family: 'VT323', monospace; /* Or Orbitron if preferred */
+  text-transform: uppercase;
+  display: inline-block;
+  cursor: pointer;
+  color: var(--text-color);
+  animation: glitch-skew 1.5s infinite linear alternate-reverse;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.glitch::before {
+  left: 2px;
+  text-shadow: -1px 0 var(--accent-color);
+  animation: glitch-anim 3s infinite linear alternate-reverse;
+}
+
+.glitch::after {
+  left: -2px;
+  text-shadow: -1px 0 var(--primary-color);
+  animation: glitch-anim2 2.5s infinite linear alternate-reverse;
+}
+
+/* Base Card Styling (can be extended with Tailwind in components) */
+.themed-card {
+  @apply rounded-lg border-2 shadow-lg p-4 md:p-6;
+  background-color: var(--card-bg);
+  border-color: var(--card-border-color);
+  box-shadow: 0 0 15px 0 var(--card-shadow-color);
+  backdrop-filter: blur(3px); /* Subtle blur for translucency */
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.themed-card-header {
+  @apply pb-2 mb-4 font-bold text-xl;
+  color: var(--accent-color);
+  border-bottom: 1px solid var(--card-border-color);
+}
+
+/* Base Input Styling */
+.themed-input, .themed-select {
+  @apply w-full p-3 rounded-md border bg-transparent;
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-color);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+.themed-input::placeholder {
+  color: var(--accent-color);
+  opacity: 0.7;
+}
+.themed-input:focus, .themed-select:focus {
+  @apply outline-none ring-2;
+  border-color: var(--primary-color);
+  ring-color: var(--primary-color);
+}
+
+/* Base Button Styling */
+.themed-button {
+  @apply px-6 py-3 rounded-md font-semibold shadow-md transition-all duration-300 ease-in-out;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 1px solid transparent;
+}
+.themed-button:hover {
+  background-color: var(--button-primary-hover-bg);
+  box-shadow: 0 0 10px 0 var(--button-primary-hover-bg);
+  transform: translateY(-1px);
+}
+.themed-button-danger {
+   @apply px-6 py-3 rounded-md font-semibold shadow-md transition-all duration-300 ease-in-out;
+  background-color: #dc3545; /* Bootstrap danger */
+  color: white;
+}
+.themed-button-danger:hover {
+  background-color: #c82333;
+  box-shadow: 0 0 10px 0 #c82333;
+   transform: translateY(-1px);
+}
+
+/* Responsive Table Styling (general idea from OG) */
+.responsive-table-container {
+  @apply w-full overflow-x-auto rounded-md shadow-md;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--accent-color) var(--card-bg); /* Firefox */
+}
+.responsive-table-container::-webkit-scrollbar {
+  @apply h-2;
+}
+.responsive-table-container::-webkit-scrollbar-track {
+  background: var(--card-bg);
+  @apply rounded-b-md;
+}
+.responsive-table-container::-webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  @apply rounded-md;
+}
+
+.themed-table {
+  @apply min-w-full divide-y;
+  background-color: var(--card-bg);
+  border-color: var(--card-border-color); /* For the container border if needed */
+  color: var(--text-color);
+}
+.themed-table thead th {
+  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
+  background-color: rgba(0,0,0,0.1); /* Slightly darker for header in any theme */
+  color: var(--accent-color);
+  font-family: 'Share Tech Mono', monospace;
+}
+.themed-table tbody tr:nth-child(even) {
+  background-color: rgba(255,255,255,0.03); /* Subtle striping, works on dark/light */
+}
+.themed-table tbody tr:hover {
+  background-color: rgba(128,128,128,0.1); /* Hover effect */
+}
+.themed-table td {
+  @apply px-4 py-3 whitespace-nowrap text-sm;
 }

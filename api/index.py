@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, redirect_slashes=False)
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(drinks_router, prefix="/drinks", tags=["drinks"])

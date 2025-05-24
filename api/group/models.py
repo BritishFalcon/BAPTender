@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func, Index
 from sqlalchemy.orm import relationship
 from api.core.db import Base
 from sqlalchemy.dialects.postgresql import UUID
@@ -29,3 +29,12 @@ class UserGroup(Base):
 
     user = relationship("User", back_populates="groups")
     group = relationship("Group", back_populates="members")
+
+    __table_args__ = (
+        Index(
+            "uq_user_active_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=(active.is_(True)),
+        ),
+    )

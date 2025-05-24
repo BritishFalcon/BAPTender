@@ -14,105 +14,126 @@ export default function DrinksForm() {
     setMessage(null);
     setError(null);
 
-    // Validate required fields
+    console.log("Preparing to log drink. Current token from localStorage:", localStorage.getItem("token")); // For debugging
+
     if (!volume || !strength) {
-      setError("Volume and Strength are required.");
+      setError("Volume and Strength are required, you reprobate.");
       return;
     }
-
     const vol = Number(volume);
     const strengthPercent = Number(strength);
 
-    if (isNaN(vol) || isNaN(strengthPercent)) {
-      setError("Please enter valid numbers for Volume and Strength.");
+    if (isNaN(vol) || vol <=0 || isNaN(strengthPercent) || strengthPercent <= 0) {
+      setError("Enter valid, positive numbers for Volume and Strength, genius.");
       return;
     }
-
-    // Convert strength percent to decimal
     const strengthDecimal = strengthPercent / 100;
-
     const payload = {
-      nickname: nickname || "",
+      nickname: nickname || "Mystery Brew",
       add_time: new Date().toISOString(),
       volume: vol,
       strength: strengthDecimal,
     };
 
-    console.log("Submitting payload:", payload);
+    const token = localStorage.getItem("token");
+    // console.log("DrinksForm: Token being sent:", token); // Debug log
+
+    if (!token) {
+      setError("Authentication token is missing. Please log in again.");
+      return;
+    }
 
     try {
-      // Get token from localStorage (or pass it in as a prop if needed)
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/drinks/", {
+      // CORRECTED URL: Use /api/ (matching next.config.js source)
+      // AND ensure trailing slash to match FastAPI endpoint structure
+      const res = await fetch("/api/drinks/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // Ensure space after Bearer
         },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        setError("Error: " + (errorData.detail || "Unknown error"));
-      } else {
-        setMessage("Drink logged successfully!");
-        setVolume("");
-        setStrength("");
-        setNickname("");
+      if (res.status === 401) {
+        setError("Authorization failed. Your session might have expired. Please log in again.");
+        // localStorage.removeItem("token"); // Optional: clear bad token
+        // window.location.reload();
+        return;
       }
+
+      // No need to specifically handle 307 on client if we avoid it.
+      // Server should ideally not redirect POSTs if client calls correctly.
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ detail: `Request failed with status ${res.status}. Unable to parse error response.` }));
+        setError(`Error: ${errorData.detail || `Request failed with status ${res.status}`}`);
+        return;
+      }
+
+      setMessage("Drink logged! Ready for another, champ?");
+      setVolume("");
+      setStrength("");
+      setNickname("");
+      setTimeout(() => setMessage(null), 3000);
+
     } catch (err) {
       console.error("Error logging drink:", err);
-      setError("Error logging drink.");
+      setError("Network hiccup or a gremlin in the machine. Try again.");
     }
   };
 
   return (
-    <div className="p-4 border rounded shadow-sm max-w-md">
-      <h2 className="text-xl font-bold mb-4">Log a Drink</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Volume (ml)</label>
-          <input
-            type="number"
-            value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded p-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">
-            Strength (% ABV)
-          </label>
-          <input
-            type="number"
-            value={strength}
-            onChange={(e) => setStrength(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded p-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">
-            Nickname (optional)
-          </label>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded p-2"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Log Drink
-        </button>
-        {message && <p className="text-green-600">{message}</p>}
-        {error && <p className="text-red-600">{error}</p>}
-      </form>
-    </div>
+    // The parent div in app/page.tsx already has .themed-card
+    <form onSubmit={handleSubmit} className="space-y-var(--base-spacing) mt-4">
+      <div>
+        <label htmlFor="drinkVolume" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+          Volume (ml)
+        </label>
+        <input
+          id="drinkVolume"
+          type="number"
+          value={volume}
+          onChange={(e) => setVolume(e.target.value)}
+          className="themed-input"
+          placeholder="e.g., 330"
+        />
+      </div>
+      <div>
+        <label htmlFor="drinkStrength" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+          Strength (% ABV)
+        </label>
+        <input
+          id="drinkStrength"
+          type="number"
+          step="0.1"
+          value={strength}
+          onChange={(e) => setStrength(e.target.value)}
+          className="themed-input"
+          placeholder="e.g., 5.5"
+        />
+      </div>
+      <div>
+        <label htmlFor="drinkNickname" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+          Nickname (optional, e.g., "Rocket Fuel")
+        </label>
+        <input
+          id="drinkNickname"
+          type="text"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          className="themed-input"
+          placeholder="Your liver's nemesis"
+        />
+      </div>
+      <button
+        type="submit"
+        className="themed-button w-full font-vt323 text-lg"
+      >
+        Log Drink
+      </button>
+      {message && <p className="mt-2 text-sm font-sharetech" style={{color: 'var(--primary-color)'}}>{message}</p>}
+      {error && <p className="mt-2 text-sm font-sharetech text-red-500">{error}</p>}
+    </form>
   );
 }

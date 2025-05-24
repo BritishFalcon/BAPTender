@@ -1,3 +1,5 @@
+import asyncio
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.base import JobLookupError
 import uuid
@@ -8,6 +10,7 @@ from api.auth.models import User
 from api.drinks.models import Drink, ArchivedDrink
 from api.core.db import get_async_session
 from api.realtime.calculations import drinks_to_bac
+from api.realtime.router import push_update
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -56,11 +59,15 @@ async def archive_if_sober(user_id: uuid.UUID):
 
         # 4. Calculate
         states = drinks_to_bac(drinks_data, user_data)
+
+        """
         if not states:
             return
+        """
 
         sober_time = states[-1]["time"] if isinstance(states[-1], dict) else states[-1].time
         if sober_time > datetime.now(timezone.utc):
+            asyncio.create_task(schedule_archive(user_id, sober_time))
             return
 
         # 5. Move drinks to archive
@@ -77,6 +84,9 @@ async def archive_if_sober(user_id: uuid.UUID):
             await session.delete(d)
 
         await session.commit()
+
+    # 6. Push an update for the applicable users
+    asyncio.create_task(push_update(user_id))
 
 
 async def schedule_archive(user_id: uuid.UUID, task_time: datetime):
@@ -107,6 +117,7 @@ async def update_archival(user_id: uuid.UUID):
         result = await session.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if not user:
+            raise ValueError("User not found")
             return
 
         # Fetch drinks
@@ -116,6 +127,7 @@ async def update_archival(user_id: uuid.UUID):
         drinks = result.scalars().all()
 
         if not drinks:
+            raise ValueError("No drinks found for user")
             return
 
         drinks_data = [
@@ -136,9 +148,7 @@ async def update_archival(user_id: uuid.UUID):
         }
 
         states = drinks_to_bac(drinks_data, user_data)
-        if not states:
-            return
 
         sober_time = states[-1]["time"]
-        task_time = sober_time + timedelta(hours=1)
+        task_time = sober_time + timedelta(seconds=1)
         await schedule_archive(user_id, task_time)
