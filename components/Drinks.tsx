@@ -145,7 +145,7 @@ export default function DrinksForm() {
           className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
           style={{ color: "var(--accent-color)" }}
         >
-          Nickname (optional, e.g., "Rocket Fuel")
+          Nickname (optional, e.g., &quot;Rocket Fuel&quot;)
         </label>
         <input
           id="drinkNickname"

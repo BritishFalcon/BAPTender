@@ -86,7 +86,7 @@ export default function DummyPage() {
           {/* Existing debug info */}
           <BAPTenderDebugger />
           {/* New graph addition */}
-          <Graph />
+          <Graph currentThemeName="theme-og" />
         </BAPTenderProvider>
       )}
     </div>
