@@ -28,6 +28,8 @@ export default function GroupsWidget() {
   const [loadingMyGroups, setLoadingMyGroups] = useState(false);
   const [loadingPublicGroups, setLoadingPublicGroups] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupPublic, setNewGroupPublic] = useState(false);
 
   const getToken = useCallback(
     () =>
@@ -156,6 +158,41 @@ export default function GroupsWidget() {
       `Successfully joined and switched to group!`,
       "Failed to join group",
     );
+  };
+
+  const handleCreateGroup = async () => {
+    const token = getToken();
+    if (!token) {
+      displayFeedback("error", "You're not logged in.");
+      return;
+    }
+    setLoadingAction("create");
+
+    try {
+      const res = await fetch("/api/group/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newGroupName || null,
+          public: newGroupPublic,
+        }),
+      });
+      if (res.ok) {
+        displayFeedback("success", "Group created!");
+        window.location.reload();
+      } else {
+        const error = await res.json().catch(() => ({ detail: "Unknown error." }));
+        displayFeedback("error", `Failed to create group: ${error.detail}`);
+      }
+    } catch (err) {
+      console.error("Error creating group", err);
+      displayFeedback("error", "Client-side error creating group.");
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   const handleLeaveGroup = (groupId: string) => {
@@ -370,6 +407,43 @@ export default function GroupsWidget() {
                   <p>You are currently flying solo.</p>
                 </div>
               )}
+            </section>
+
+            {/* Create Group */}
+            <section>
+              <h4
+                className="font-semibold mb-[var(--small-spacing)] border-b pb-[var(--small-spacing)] text-lg"
+                style={{
+                  borderColor: "var(--card-border-color)",
+                  color: "var(--primary-color)",
+                }}
+              >
+                Create Group
+              </h4>
+              <div className="space-y-[var(--small-spacing)] text-sm">
+                <input
+                  type="text"
+                  placeholder="Group name (optional)"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="themed-input text-xs p-[var(--small-spacing)] w-full"
+                />
+                <label className="flex items-center gap-[var(--tiny-spacing)] text-xs">
+                  <input
+                    type="checkbox"
+                    checked={newGroupPublic}
+                    onChange={(e) => setNewGroupPublic(e.target.checked)}
+                  />
+                  Public Group
+                </label>
+                <button
+                  onClick={handleCreateGroup}
+                  disabled={!!loadingAction}
+                  className="themed-button text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)] w-full"
+                >
+                  {loadingAction === "create" ? "Creating..." : "Create"}
+                </button>
+              </div>
             </section>
 
             {/* My Groups */}
