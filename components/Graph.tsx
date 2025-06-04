@@ -15,7 +15,14 @@ import {
 import "chartjs-adapter-date-fns";
 import { useBAPTender } from "@/context/BAPTenderContext";
 
-ChartJS.register(TimeScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
+ChartJS.register(
+  TimeScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+);
 
 // Types (as previously defined)
 type DataPoint = { x: number; y: number };
@@ -32,32 +39,53 @@ type CustomDataset = {
 };
 
 // HELPER FUNCTION: Get theme colors from CSS variables
-const getThemeColorsFromCSS = (): { primary: string; accent: string; text: string; cardBg: string; } => {
-  if (typeof window === 'undefined') {
-    return { primary: '#007bff', accent: '#6c757d', text: '#212529', cardBg: '#ffffff' };
+const getThemeColorsFromCSS = (): {
+  primary: string;
+  accent: string;
+  text: string;
+  cardBg: string;
+} => {
+  if (typeof window === "undefined") {
+    return {
+      primary: "#007bff",
+      accent: "#6c757d",
+      text: "#212529",
+      cardBg: "#ffffff",
+    };
   }
   const styles = getComputedStyle(document.documentElement);
   return {
-    primary: styles.getPropertyValue('--primary-color').trim() || '#007bff',
-    accent: styles.getPropertyValue('--accent-color').trim() || '#6c757d',
-    text: styles.getPropertyValue('--text-color').trim() || '#212529',
-    cardBg: styles.getPropertyValue('--card-bg').trim() || 'rgba(255,255,255,0.85)',
+    primary: styles.getPropertyValue("--primary-color").trim() || "#007bff",
+    accent: styles.getPropertyValue("--accent-color").trim() || "#6c757d",
+    text: styles.getPropertyValue("--text-color").trim() || "#212529",
+    cardBg:
+      styles.getPropertyValue("--card-bg").trim() || "rgba(255,255,255,0.85)",
   };
 };
 
 // HELPER FUNCTION: Theme-aware color cycling
-const themeColorCycle = (index: number, themeColors: { primary: string; accent: string }): string => {
+const themeColorCycle = (
+  index: number,
+  themeColors: { primary: string; accent: string },
+): string => {
   const colors = [
     themeColors.primary,
     themeColors.accent,
-    '#4BC0C0', '#FFB347', '#9B59B6', '#3498DB',
+    "#4BC0C0",
+    "#FFB347",
+    "#9B59B6",
+    "#3498DB",
   ];
   return colors[index % colors.length];
 };
 
 // HELPER FUNCTION: Calculate and APPLY X-axis padding
 // Defined here at module level, before the component that uses it.
-const applyXPaddedRange = (chart: ChartJS | null, datasets: CustomDataset[], currentTime: number) => {
+const applyXPaddedRange = (
+  chart: ChartJS | null,
+  datasets: CustomDataset[],
+  currentTime: number,
+) => {
   if (!chart || !chart.options.scales?.x) {
     // console.warn("applyXPaddedRange: Chart or x-axis not ready.");
     return;
@@ -69,22 +97,25 @@ const applyXPaddedRange = (chart: ChartJS | null, datasets: CustomDataset[], cur
   if (allTimes.length === 0) {
     const defaultWindowMs = 3600000; // 1 hour
     const padMs = defaultWindowMs * 0.05;
-    minVal = currentTime - (defaultWindowMs / 2) - padMs;
-    maxVal = currentTime + (defaultWindowMs / 2) + padMs;
+    minVal = currentTime - defaultWindowMs / 2 - padMs;
+    maxVal = currentTime + defaultWindowMs / 2 + padMs;
   } else {
     const historicalMin = Math.min(...allTimes);
-    const currentMaxPoint = Math.max(...allTimes.filter(t => t <= currentTime), historicalMin);
+    const currentMaxPoint = Math.max(
+      ...allTimes.filter((t) => t <= currentTime),
+      historicalMin,
+    );
     const currentMaxWithNow = Math.max(currentTime, currentMaxPoint);
 
     const range = currentMaxWithNow - historicalMin;
-    const pad = range > 0 ? range * 0.05 : (5 * 60 * 1000); // Min 5 min padding
+    const pad = range > 0 ? range * 0.05 : 5 * 60 * 1000; // Min 5 min padding
 
     minVal = historicalMin - pad;
     maxVal = currentMaxWithNow + pad;
 
     if (minVal >= maxVal) {
-      minVal = currentMaxWithNow - (30 * 60 * 1000);
-      maxVal = currentMaxWithNow + (30 * 60 * 1000);
+      minVal = currentMaxWithNow - 30 * 60 * 1000;
+      maxVal = currentMaxWithNow + 30 * 60 * 1000;
     }
   }
   // Directly modify the chart's options for min and max
@@ -102,7 +133,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
 
-  const currentThemeColors = useMemo(() => getThemeColorsFromCSS(), [currentThemeName]);
+  const currentThemeColors = useMemo(
+    () => getThemeColorsFromCSS(),
+    [currentThemeName],
+  );
 
   const buildSeriesData = useCallback((): CustomDataset[] => {
     const now = Date.now();
@@ -118,7 +152,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
         filtered = points.slice(0, -1);
       }
       if (filtered.length === 0 && points.length > 0) {
-         filtered = [points[0]];
+        filtered = [points[0]];
       } else if (filtered.length === 0) {
         continue;
       }
@@ -128,9 +162,18 @@ export default function Graph({ currentThemeName }: GraphProps) {
         y: parseFloat(p.bac) || 0,
       }));
 
-      const lastHistPointForCalc = historical.length > 0 ? historical[historical.length - 1] : { x: now, y: 0 };
-      const hoursElapsed = Math.max(0, (now - lastHistPointForCalc.x) / 3600000);
-      const realTimeBAC = Math.max(0, lastHistPointForCalc.y - 0.015 * hoursElapsed);
+      const lastHistPointForCalc =
+        historical.length > 0
+          ? historical[historical.length - 1]
+          : { x: now, y: 0 };
+      const hoursElapsed = Math.max(
+        0,
+        (now - lastHistPointForCalc.x) / 3600000,
+      );
+      const realTimeBAC = Math.max(
+        0,
+        lastHistPointForCalc.y - 0.015 * hoursElapsed,
+      );
 
       const currentDataPoints = historical.length > 0 ? [...historical] : [];
       currentDataPoints.push({ x: now, y: realTimeBAC });
@@ -145,7 +188,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
         data: currentDataPoints,
         borderColor: color,
         backgroundColor: `${color}33`,
-        fill: 'start',
+        fill: "start",
         tension: 0.3,
         pointRadius: 2,
         pointBackgroundColor: color,
@@ -153,48 +196,86 @@ export default function Graph({ currentThemeName }: GraphProps) {
       });
     }
     if (newDatasets.length === 0) {
-        newDatasets.push({
-            label: "BAC", data: [{x: now, y: 0}],
-            borderColor: currentThemeColors.primary, backgroundColor: `${currentThemeColors.primary}33`,
-            fill: 'start', tension: 0.3, pointRadius: 2,
-            pointBackgroundColor: currentThemeColors.primary, borderWidth: 1.5,
-        });
+      newDatasets.push({
+        label: "BAC",
+        data: [{ x: now, y: 0 }],
+        borderColor: currentThemeColors.primary,
+        backgroundColor: `${currentThemeColors.primary}33`,
+        fill: "start",
+        tension: 0.3,
+        pointRadius: 2,
+        pointBackgroundColor: currentThemeColors.primary,
+        borderWidth: 1.5,
+      });
     }
     return newDatasets;
   }, [state.states, state.members, currentThemeColors]);
 
-  const options = useMemo((): ChartOptions<'line'> => ({
-    scales: {
-      x: {
-        type: "time",
-        time: { unit: "minute", tooltipFormat: 'HH:mm, MMM d', displayFormats: { minute: 'HH:mm', hour: 'HH:mm' } },
-        title: { display: true, text: "Time", color: currentThemeColors.text },
-        ticks: { color: currentThemeColors.text, major: { enabled: true }, source: 'auto' },
-        grid: { color: `${currentThemeColors.text}20`, borderColor: `${currentThemeColors.text}33` },
+  const options = useMemo(
+    (): ChartOptions<"line"> => ({
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "minute",
+            tooltipFormat: "HH:mm, MMM d",
+            displayFormats: { minute: "HH:mm", hour: "HH:mm" },
+          },
+          title: {
+            display: true,
+            text: "Time",
+            color: currentThemeColors.text,
+          },
+          ticks: {
+            color: currentThemeColors.text,
+            major: { enabled: true },
+            source: "auto",
+          },
+          grid: {
+            color: `${currentThemeColors.text}20`,
+            borderColor: `${currentThemeColors.text}33`,
+          },
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "BAC (%)",
+            color: currentThemeColors.text,
+          },
+          ticks: { color: currentThemeColors.text, precision: 3 },
+          grid: {
+            color: `${currentThemeColors.text}20`,
+            borderColor: `${currentThemeColors.text}33`,
+          },
+        },
       },
-      y: {
-        beginAtZero: true,
-        title: { display: true, text: "BAC (%)", color: currentThemeColors.text },
-        ticks: { color: currentThemeColors.text, precision: 3 },
-        grid: { color: `${currentThemeColors.text}20`, borderColor: `${currentThemeColors.text}33` },
+      plugins: {
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          backgroundColor: currentThemeColors.cardBg,
+          titleColor: currentThemeColors.text,
+          bodyColor: currentThemeColors.text,
+          borderColor: currentThemeColors.accent,
+          borderWidth: 1,
+          padding: 10,
+        },
+        legend: {
+          display: true,
+          position: "top",
+          labels: {
+            color: currentThemeColors.text,
+            font: { family: "'Share Tech Mono', monospace", size: 12 },
+          },
+        },
       },
-    },
-    plugins: {
-      tooltip: {
-        mode: "index", intersect: false,
-        backgroundColor: currentThemeColors.cardBg, titleColor: currentThemeColors.text,
-        bodyColor: currentThemeColors.text, borderColor: currentThemeColors.accent,
-        borderWidth: 1, padding: 10,
-      },
-      legend: {
-        display: true, position: 'top',
-        labels: { color: currentThemeColors.text, font: { family: "'Share Tech Mono', monospace", size: 12 } }
-      },
-    },
-    animation: { duration: 600, easing: "easeInOutQuad" },
-    responsive: true,
-    maintainAspectRatio: false,
-  }), [currentThemeColors]);
+      animation: { duration: 600, easing: "easeInOutQuad" },
+      responsive: true,
+      maintainAspectRatio: false,
+    }),
+    [currentThemeColors],
+  );
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -217,8 +298,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
     const oldData = chartDataRef.current;
     let foundNewPointOrUser = false;
     if (freshData.length !== oldData.length) {
-        foundNewPointOrUser = true;
-    } else { /* ... (your diffing logic) ... */ }
+      foundNewPointOrUser = true;
+    } else {
+      /* ... (your diffing logic) ... */
+    }
 
     chartDataRef.current = freshData;
     chartRef.current.data.datasets = freshData;
@@ -233,26 +316,40 @@ export default function Graph({ currentThemeName }: GraphProps) {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (!chartRef.current || !chartRef.current.data || !chartRef.current.data.datasets) return;
+      if (
+        !chartRef.current ||
+        !chartRef.current.data ||
+        !chartRef.current.data.datasets
+      )
+        return;
       const now = Date.now();
       // let needsSilentUpdate = false; // Not strictly needed if update is always called
 
       chartRef.current.data.datasets.forEach((ds: any) => {
         if (!ds.data || ds.data.length === 0) return;
         const currentNowPoint = ds.data[ds.data.length - 1];
-        const lastHistPoint = ds.data.length > 1 ? ds.data[ds.data.length - 2] : currentNowPoint;
+        const lastHistPoint =
+          ds.data.length > 1 ? ds.data[ds.data.length - 2] : currentNowPoint;
         const hoursElapsed = Math.max(0, (now - lastHistPoint.x) / 3600000);
         const newBAC = Math.max(0, lastHistPoint.y - 0.015 * hoursElapsed);
 
         currentNowPoint.x = now;
         currentNowPoint.y = newBAC;
 
-        if (newBAC <= 0 && lastHistPoint.y <= 0 && (now - lastHistPoint.x > 10 * 60 * 1000)) {
-            currentNowPoint.y = 0; // Keep at 0
+        if (
+          newBAC <= 0 &&
+          lastHistPoint.y <= 0 &&
+          now - lastHistPoint.x > 10 * 60 * 1000
+        ) {
+          currentNowPoint.y = 0; // Keep at 0
         }
       });
 
-      applyXPaddedRange(chartRef.current, chartRef.current.data.datasets as CustomDataset[], now);
+      applyXPaddedRange(
+        chartRef.current,
+        chartRef.current.data.datasets as CustomDataset[],
+        now,
+      );
       chartRef.current.update("none");
     }, 1000);
     return () => clearInterval(intervalId);

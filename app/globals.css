@@ -1,5 +1,5 @@
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -10,6 +10,7 @@
   --base-spacing: 1rem; /* 16px */
   --golden-spacing: calc(var(--base-spacing) * 1.618);
   --small-spacing: calc(var(--base-spacing) / 2);
+  --tiny-spacing: calc(var(--small-spacing) / 2);
   --large-spacing: calc(var(--base-spacing) * 2);
 
   /* Default Theme (OG) applied to body by default */
@@ -29,17 +30,20 @@
 }
 
 body {
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
-  transition: background-color 0.6s ease-in-out, color 0.6s ease-in-out;
+  transition:
+    background-color 0.6s ease-in-out,
+    color 0.6s ease-in-out;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden; /* Prevent horizontal scroll from glitch effects */
 }
 
 /* Theme Overrides */
-.theme-og { /* Explicit OG theme class */
+.theme-og {
+  /* Explicit OG theme class */
   --bg-color: #f8f9fa;
   --text-color: #212529;
   --primary-color: #007bff;
@@ -103,7 +107,6 @@ body {
   --button-primary-hover-bg: var(--accent-color);
 }
 
-
 /* Particle Background Styling */
 #particles-js-container {
   position: fixed;
@@ -118,7 +121,7 @@ body {
 .glitch {
   position: relative;
   line-height: 1;
-  font-family: 'VT323', monospace; /* Or Orbitron if preferred */
+  font-family: "VT323", monospace; /* Or Orbitron if preferred */
   text-transform: uppercase;
   display: inline-block;
   cursor: pointer;
@@ -156,7 +159,10 @@ body {
   border-color: var(--card-border-color);
   box-shadow: 0 0 15px 0 var(--card-shadow-color);
   backdrop-filter: blur(3px); /* Subtle blur for translucency */
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 }
 
 .themed-card-header {
@@ -166,18 +172,22 @@ body {
 }
 
 /* Base Input Styling */
-.themed-input, .themed-select {
+.themed-input,
+.themed-select {
   @apply w-full p-3 rounded-md border bg-transparent;
   background-color: var(--input-bg);
   border-color: var(--input-border);
   color: var(--text-color);
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 }
 .themed-input::placeholder {
   color: var(--accent-color);
   opacity: 0.7;
 }
-.themed-input:focus, .themed-select:focus {
+.themed-input:focus,
+.themed-select:focus {
   @apply outline-none ring-2;
   border-color: var(--primary-color);
   ring-color: var(--primary-color);
@@ -196,14 +206,14 @@ body {
   transform: translateY(-1px);
 }
 .themed-button-danger {
-   @apply px-6 py-3 rounded-md font-semibold shadow-md transition-all duration-300 ease-in-out;
+  @apply px-6 py-3 rounded-md font-semibold shadow-md transition-all duration-300 ease-in-out;
   background-color: #dc3545; /* Bootstrap danger */
   color: white;
 }
 .themed-button-danger:hover {
   background-color: #c82333;
   box-shadow: 0 0 10px 0 #c82333;
-   transform: translateY(-1px);
+  transform: translateY(-1px);
 }
 
 /* Responsive Table Styling (general idea from OG) */
@@ -227,20 +237,32 @@ body {
 .themed-table {
   @apply min-w-full divide-y;
   background-color: var(--card-bg);
-  border-color: var(--card-border-color); /* For the container border if needed */
+  border-color: var(
+    --card-border-color
+  ); /* For the container border if needed */
   color: var(--text-color);
 }
 .themed-table thead th {
   @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
-  background-color: rgba(0,0,0,0.1); /* Slightly darker for header in any theme */
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.1
+  ); /* Slightly darker for header in any theme */
   color: var(--accent-color);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 .themed-table tbody tr:nth-child(even) {
-  background-color: rgba(255,255,255,0.03); /* Subtle striping, works on dark/light */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.03
+  ); /* Subtle striping, works on dark/light */
 }
 .themed-table tbody tr:hover {
-  background-color: rgba(128,128,128,0.1); /* Hover effect */
+  background-color: rgba(128, 128, 128, 0.1); /* Hover effect */
 }
 .themed-table td {
   @apply px-4 py-3 whitespace-nowrap text-sm;
@@ -251,7 +273,8 @@ body {
 /* ... your existing theme variables and other global styles ... */
 
 /* Epoch Chart Theming Overrides */
-.epoch-chart-container .epoch { /* Add a wrapper for better specificity if needed */
+.epoch-chart-container .epoch {
+  /* Add a wrapper for better specificity if needed */
   /* Background of the chart plotting area - try to match card or be transparent */
   /* Epoch might have its own background settings, this is for the SVG container */
 }
@@ -266,7 +289,7 @@ body {
 
 .epoch-chart-container .epoch .axis text {
   fill: var(--text-color); /* Color of axis labels/ticks */
-  font-family: 'Share Tech Mono', monospace; /* Match your theme font */
+  font-family: "Share Tech Mono", monospace; /* Match your theme font */
   font-size: 10px; /* Adjust as needed */
   opacity: 0.9;
 }
@@ -315,5 +338,5 @@ body {
   background-color: var(--card-bg); /* Use card background for tooltip */
   border: 1px solid var(--accent-color);
   color: var(--text-color);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }

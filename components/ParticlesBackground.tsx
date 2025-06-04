@@ -15,7 +15,9 @@ interface ParticlesBackgroundProps {
   currentTheme: string; // To change particle colors with theme
 }
 
-const ParticlesBackground: React.FC<ParticlesBackgroundProps> = ({ currentTheme }) => {
+const ParticlesBackground: React.FC<ParticlesBackgroundProps> = ({
+  currentTheme,
+}) => {
   const [init, setInit] = React.useState(false);
 
   React.useEffect(() => {
@@ -27,16 +29,15 @@ const ParticlesBackground: React.FC<ParticlesBackgroundProps> = ({ currentTheme 
     });
   }, []);
 
-
   const particleColors = useMemo(() => {
     switch (currentTheme) {
-      case 'theme-cyber':
+      case "theme-cyber":
         return ["#00ff9c", "#ff00e0", "#00b3ff"];
-      case 'theme-neon':
+      case "theme-neon":
         return ["#ffff00", "#ff00e6", "#00ffd2"];
-      case 'theme-dark':
+      case "theme-dark":
         return ["#90baf9", "#6effd5", "#fafafa"];
-      case 'theme-og':
+      case "theme-og":
       default:
         return ["#007bff", "#6c757d", "#28a745", "#ffc107"];
     }
@@ -100,13 +101,13 @@ const ParticlesBackground: React.FC<ParticlesBackgroundProps> = ({ currentTheme 
           value: 80, // OG had 150, adjust for performance
         },
         opacity: {
-          value: {min: 0.1, max: 0.5},
-           animation: {
-             enable: true,
-             speed: 0.5,
-             minimumValue: 0.1,
-             sync: false,
-           },
+          value: { min: 0.1, max: 0.5 },
+          animation: {
+            enable: true,
+            speed: 0.5,
+            minimumValue: 0.1,
+            sync: false,
+          },
         },
         shape: {
           type: "circle",
@@ -123,7 +124,7 @@ const ParticlesBackground: React.FC<ParticlesBackgroundProps> = ({ currentTheme 
       },
       detectRetina: true,
     }),
-    [particleColors]
+    [particleColors],
   );
 
   if (!init) {

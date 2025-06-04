@@ -4,7 +4,11 @@ import { useState } from "react";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 
-export default function AuthGate({ onLogin }: { onLogin: (token: string) => void }) {
+export default function AuthGate({
+  onLogin,
+}: {
+  onLogin: (token: string) => void;
+}) {
   const [mode, setMode] = useState<"login" | "register">("login");
 
   return (
@@ -13,9 +17,13 @@ export default function AuthGate({ onLogin }: { onLogin: (token: string) => void
       {mode === "login" ? (
         <>
           <LoginForm onLogin={onLogin} />
-          <p className="mt-var(--base-spacing) text-center text-sm font-sharetech">
+          <p className="mt-[var(--base-spacing)] text-center text-sm font-sharetech">
             No account, comrade?{" "}
-            <button onClick={() => setMode("register")} className="font-bold hover:underline" style={{color: 'var(--primary-color)'}}>
+            <button
+              onClick={() => setMode("register")}
+              className="font-bold hover:underline"
+              style={{ color: "var(--primary-color)" }}
+            >
               Register here
             </button>
           </p>
@@ -23,9 +31,13 @@ export default function AuthGate({ onLogin }: { onLogin: (token: string) => void
       ) : (
         <>
           <RegisterForm onLogin={onLogin} />
-          <p className="mt-var(--base-spacing) text-center text-sm font-sharetech">
+          <p className="mt-[var(--base-spacing)] text-center text-sm font-sharetech">
             Already in the system?{" "}
-            <button onClick={() => setMode("login")} className="font-bold hover:underline" style={{color: 'var(--primary-color)'}}>
+            <button
+              onClick={() => setMode("login")}
+              className="font-bold hover:underline"
+              style={{ color: "var(--primary-color)" }}
+            >
               Log in
             </button>
           </p>

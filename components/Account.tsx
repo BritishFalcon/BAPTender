@@ -10,7 +10,7 @@ const formatDateForInput = (dateString: string | Date): string => {
     // Adjust for timezone offset to get local YYYY-MM-DD
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
     if (isNaN(date.getFullYear())) return "";
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   } catch (e) {
     return "";
   }
@@ -31,7 +31,10 @@ export default function AccountWidget() {
     dob: "",
     // realDob is no longer a separate form field, will always be true in payload
   });
-  const [feedback, setFeedback] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const resetFormData = useCallback(() => {
@@ -48,12 +51,12 @@ export default function AccountWidget() {
 
   useEffect(() => {
     if (userFromContext.id) {
-        resetFormData();
+      resetFormData();
     }
   }, [userFromContext, resetFormData]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     // No longer need to handle checkbox type for realDob here
@@ -64,7 +67,7 @@ export default function AccountWidget() {
     }));
   };
 
-  const displayLocalFeedback = (type: 'success' | 'error', message: string) => {
+  const displayLocalFeedback = (type: "success" | "error", message: string) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 4000);
   };
@@ -76,7 +79,7 @@ export default function AccountWidget() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      displayLocalFeedback('error', "Not authenticated.");
+      displayLocalFeedback("error", "Not authenticated.");
       setIsSaving(false);
       return;
     }
@@ -91,13 +94,13 @@ export default function AccountWidget() {
     };
     // console.log("Payload for PATCH /api/users/me:", JSON.stringify(payload));
 
-
     try {
-      const response = await fetch("/api/auth/users/me", { // NO TRAILING SLASH
+      const response = await fetch("/api/auth/users/me", {
+        // NO TRAILING SLASH
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -106,21 +109,28 @@ export default function AccountWidget() {
       // const responseText = await response.text();
       // console.log("Save response text:", responseText);
 
-
       if (response.ok) {
-        displayLocalFeedback('success', "Account details updated! Refreshing data...");
+        displayLocalFeedback(
+          "success",
+          "Account details updated! Refreshing data...",
+        );
         setExpanded(false);
       } else {
         let errorDetail = `Update failed (status ${response.status}).`;
         try {
-            const errorData = await response.json();
-            errorDetail = errorData.detail || errorDetail;
-        } catch (parseError) { /* console.error("Could not parse error response as JSON:", responseText); */ }
-        displayLocalFeedback('error', `Error: ${errorDetail}`);
+          const errorData = await response.json();
+          errorDetail = errorData.detail || errorDetail;
+        } catch (parseError) {
+          /* console.error("Could not parse error response as JSON:", responseText); */
+        }
+        displayLocalFeedback("error", `Error: ${errorDetail}`);
       }
     } catch (err) {
       console.error("Error saving account details (fetch failed):", err);
-      displayLocalFeedback('error', "Failed to send update. Check network or server.");
+      displayLocalFeedback(
+        "error",
+        "Failed to send update. Check network or server.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -132,72 +142,186 @@ export default function AccountWidget() {
   };
 
   if (!userFromContext.id) {
-    return <div className="themed-button text-sm p-2">Loading Account...</div>;
+    return (
+      <div className="themed-button text-sm p-[var(--small-spacing)]">
+        Loading Account...
+      </div>
+    );
   }
 
   return (
     <div className="relative font-sharetech">
       <button
-        onClick={() => { setExpanded(!expanded); if(!expanded) resetFormData(); } }
-        className="themed-button text-sm p-2"
-        style={{ minWidth: '150px' }}
+        onClick={() => {
+          setExpanded(!expanded);
+          if (!expanded) resetFormData();
+        }}
+        className="themed-button text-sm p-[var(--small-spacing)]"
+        style={{ minWidth: "150px" }}
       >
-        {userFromContext.displayName ? `Hey, ${userFromContext.displayName}` : "Account"}
+        {userFromContext.displayName
+          ? `Hey, ${userFromContext.displayName}`
+          : "Account"}
       </button>
 
       {expanded && (
-        <div className="absolute right-0 mt-2 min-w-[320px] w-auto max-w-sm sm:max-w-md themed-card p-var(--base-spacing) shadow-2xl z-50">
-          <div className="flex justify-between items-center mb-var(--base-spacing)">
-            <h2 className="text-xl font-bold font-vt323" style={{color: 'var(--accent-color)'}}>Account Settings</h2>
-            <button onClick={() => setExpanded(false)} className="text-sm hover:underline" style={{color: 'var(--text-color)'}}>&times; Close</button>
+        <div className="absolute right-0 mt-[var(--small-spacing)] min-w-[320px] w-auto max-w-sm sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50">
+          <div className="flex justify-between items-center mb-[var(--base-spacing)]">
+            <h2
+              className="text-xl font-bold font-vt323"
+              style={{ color: "var(--accent-color)" }}
+            >
+              Account Settings
+            </h2>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-sm hover:underline"
+              style={{ color: "var(--text-color)" }}
+            >
+              &times; Close
+            </button>
           </div>
 
           {feedback && (
-            <div className={`p-2 mb-var(--small-spacing) text-xs rounded ${feedback.type === 'error' ? 'bg-red-700 text-white' : 'bg-green-700 text-white'}`}>
+            <div
+              className={`p-[var(--small-spacing)] mb-[var(--small-spacing)] text-xs rounded ${feedback.type === "error" ? "bg-red-700 text-white" : "bg-green-700 text-white"}`}
+            >
               {feedback.message}
             </div>
           )}
 
-          <form onSubmit={handleSave} className="space-y-var(--small-spacing)">
+          <form
+            onSubmit={handleSave}
+            className="space-y-[var(--small-spacing)]"
+          >
             {/* ... other input fields like displayName, email, weight, height ... */}
             <div>
-              <label htmlFor="acc_displayName" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Display Name</label>
-              <input id="acc_displayName" type="text" name="displayName" value={formData.displayName} onChange={handleChange} className="themed-input text-sm p-2"/>
+              <label
+                htmlFor="acc_displayName"
+                className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                style={{ color: "var(--accent-color)" }}
+              >
+                Display Name
+              </label>
+              <input
+                id="acc_displayName"
+                type="text"
+                name="displayName"
+                value={formData.displayName}
+                onChange={handleChange}
+                className="themed-input text-sm p-[var(--small-spacing)]"
+              />
             </div>
             <div>
-              <label htmlFor="acc_email" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Email (Cannot Change)</label>
-              <input id="acc_email" type="email" name="email" value={formData.email} disabled className="themed-input text-sm p-2 bg-opacity-50 cursor-not-allowed"/>
+              <label
+                htmlFor="acc_email"
+                className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                style={{ color: "var(--accent-color)" }}
+              >
+                Email (Cannot Change)
+              </label>
+              <input
+                id="acc_email"
+                type="email"
+                name="email"
+                value={formData.email}
+                disabled
+                className="themed-input text-sm p-[var(--small-spacing)] bg-opacity-50 cursor-not-allowed"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-var(--small-spacing)">
+            <div className="grid grid-cols-2 gap-[var(--small-spacing)]">
               <div>
-                <label htmlFor="acc_weight" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Weight (kg)</label>
-                <input id="acc_weight" type="number" name="weight" value={formData.weight} onChange={handleChange} className="themed-input text-sm p-2"/>
+                <label
+                  htmlFor="acc_weight"
+                  className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                  style={{ color: "var(--accent-color)" }}
+                >
+                  Weight (kg)
+                </label>
+                <input
+                  id="acc_weight"
+                  type="number"
+                  name="weight"
+                  value={formData.weight}
+                  onChange={handleChange}
+                  className="themed-input text-sm p-[var(--small-spacing)]"
+                />
               </div>
               <div>
-                <label htmlFor="acc_height" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Height (cm)</label>
-                <input id="acc_height" type="number" name="height" value={formData.height || ""} onChange={handleChange} placeholder="Optional" className="themed-input text-sm p-2"/>
+                <label
+                  htmlFor="acc_height"
+                  className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                  style={{ color: "var(--accent-color)" }}
+                >
+                  Height (cm)
+                </label>
+                <input
+                  id="acc_height"
+                  type="number"
+                  name="height"
+                  value={formData.height || ""}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  className="themed-input text-sm p-[var(--small-spacing)]"
+                />
               </div>
             </div>
             <div>
-              <label htmlFor="acc_gender" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Gender</label>
-              <select id="acc_gender" name="gender" value={formData.gender} onChange={handleChange} className="themed-select text-sm p-2">
+              <label
+                htmlFor="acc_gender"
+                className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                style={{ color: "var(--accent-color)" }}
+              >
+                Gender
+              </label>
+              <select
+                id="acc_gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="themed-select text-sm p-[var(--small-spacing)]"
+              >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
             </div>
             <div>
-              <label htmlFor="acc_dob" className="block text-xs font-medium mb-0.5" style={{color: 'var(--accent-color)'}}>Date of Birth</label>
-              <input id="acc_dob" type="date" name="dob" value={formData.dob} onChange={handleChange} className="themed-input text-sm p-2"/>
+              <label
+                htmlFor="acc_dob"
+                className="block text-xs font-medium mb-[var(--tiny-spacing)]"
+                style={{ color: "var(--accent-color)" }}
+              >
+                Date of Birth
+              </label>
+              <input
+                id="acc_dob"
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+                className="themed-input text-sm p-[var(--small-spacing)]"
+              />
             </div>
 
             {/* realDob checkbox is now REMOVED from UI */}
             {/* It will be sent as true in the payload by default */}
 
-            <div className="flex justify-between items-center mt-var(--base-spacing) pt-var(--small-spacing) border-t" style={{borderColor: 'var(--card-border-color)'}}>
-              <button type="submit" disabled={isSaving} className="themed-button text-sm py-1.5 px-3">
+            <div
+              className="flex justify-between items-center mt-[var(--base-spacing)] pt-[var(--small-spacing)] border-t"
+              style={{ borderColor: "var(--card-border-color)" }}
+            >
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="themed-button text-sm py-1.5 px-3"
+              >
                 {isSaving ? "Saving..." : "Save Changes"}
               </button>
-              <button type="button" onClick={handleLogout} className="themed-button-danger text-sm py-1.5 px-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="themed-button-danger text-sm py-1.5 px-3"
+              >
                 Logout
               </button>
             </div>
