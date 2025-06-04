@@ -9,11 +9,19 @@ interface HeaderProps {
   currentThemeName: string;
 }
 
-export default function Header({ onThemeToggle, currentThemeName }: HeaderProps) {
+export default function Header({
+  onThemeToggle,
+  currentThemeName,
+}: HeaderProps) {
   return (
-    <header className="p-4 shadow-lg" style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border-color)' }}>
+    <header
+      className="p-[var(--base-spacing)] shadow-lg"
+      style={{
+        backgroundColor: "var(--card-bg)",
+        borderBottom: "1px solid var(--card-border-color)",
+      }}
+    >
       <div className="container mx-auto flex justify-between items-center">
-
         {/* CHILD 1: Left Aligned Wrapper */}
         {/* flex-1 makes it take up 1/3 of the space. justify-start aligns the content inside it to the left. */}
         <div className="flex-1 flex justify-start">
@@ -27,7 +35,7 @@ export default function Header({ onThemeToggle, currentThemeName }: HeaderProps)
             className="text-4xl cursor-pointer"
             data-text="BAPTENDER"
             onClick={onThemeToggle}
-            title={`Toggle Theme (Current: ${currentThemeName.replace('theme-','')})`}
+            title={`Toggle Theme (Current: ${currentThemeName.replace("theme-", "")})`}
           >
             BAPTENDER
           </div>
@@ -38,7 +46,6 @@ export default function Header({ onThemeToggle, currentThemeName }: HeaderProps)
         <div className="flex-1 flex justify-end">
           <AccountWidget />
         </div>
-
       </div>
     </header>
   );

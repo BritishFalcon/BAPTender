@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export default function LoginForm({ onLogin }: { onLogin: (token: string) => void }) {
+export default function LoginForm({
+  onLogin,
+}: {
+  onLogin: (token: string) => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,12 +38,21 @@ export default function LoginForm({ onLogin }: { onLogin: (token: string) => voi
   }
 
   return (
-    <form onSubmit={handleLogin} className="space-y-var(--base-spacing)">
-      <h2 className="text-2xl font-bold font-vt323 text-center mb-var(--base-spacing)" style={{color: 'var(--accent-color)'}}>
+    <form onSubmit={handleLogin} className="space-y-[var(--base-spacing)]">
+      <h2
+        className="text-2xl font-bold font-vt323 text-center mb-[var(--base-spacing)]"
+        style={{ color: "var(--accent-color)" }}
+      >
         Access Terminal
       </h2>
       <div>
-        <label htmlFor="loginEmail" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>Email</label>
+        <label
+          htmlFor="loginEmail"
+          className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
+          Email
+        </label>
         <input
           id="loginEmail"
           type="email"
@@ -51,7 +64,13 @@ export default function LoginForm({ onLogin }: { onLogin: (token: string) => voi
         />
       </div>
       <div>
-        <label htmlFor="loginPassword" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>Password</label>
+        <label
+          htmlFor="loginPassword"
+          className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
+          Password
+        </label>
         <input
           id="loginPassword"
           type="password"

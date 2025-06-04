@@ -14,7 +14,10 @@ export default function DrinksForm() {
     setMessage(null);
     setError(null);
 
-    console.log("Preparing to log drink. Current token from localStorage:", localStorage.getItem("token")); // For debugging
+    console.log(
+      "Preparing to log drink. Current token from localStorage:",
+      localStorage.getItem("token"),
+    ); // For debugging
 
     if (!volume || !strength) {
       setError("Volume and Strength are required, you reprobate.");
@@ -23,8 +26,15 @@ export default function DrinksForm() {
     const vol = Number(volume);
     const strengthPercent = Number(strength);
 
-    if (isNaN(vol) || vol <=0 || isNaN(strengthPercent) || strengthPercent <= 0) {
-      setError("Enter valid, positive numbers for Volume and Strength, genius.");
+    if (
+      isNaN(vol) ||
+      vol <= 0 ||
+      isNaN(strengthPercent) ||
+      strengthPercent <= 0
+    ) {
+      setError(
+        "Enter valid, positive numbers for Volume and Strength, genius.",
+      );
       return;
     }
     const strengthDecimal = strengthPercent / 100;
@@ -50,13 +60,15 @@ export default function DrinksForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // Ensure space after Bearer
+          Authorization: `Bearer ${token}`, // Ensure space after Bearer
         },
         body: JSON.stringify(payload),
       });
 
       if (res.status === 401) {
-        setError("Authorization failed. Your session might have expired. Please log in again.");
+        setError(
+          "Authorization failed. Your session might have expired. Please log in again.",
+        );
         // localStorage.removeItem("token"); // Optional: clear bad token
         // window.location.reload();
         return;
@@ -66,8 +78,12 @@ export default function DrinksForm() {
       // Server should ideally not redirect POSTs if client calls correctly.
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ detail: `Request failed with status ${res.status}. Unable to parse error response.` }));
-        setError(`Error: ${errorData.detail || `Request failed with status ${res.status}`}`);
+        const errorData = await res.json().catch(() => ({
+          detail: `Request failed with status ${res.status}. Unable to parse error response.`,
+        }));
+        setError(
+          `Error: ${errorData.detail || `Request failed with status ${res.status}`}`,
+        );
         return;
       }
 
@@ -76,7 +92,6 @@ export default function DrinksForm() {
       setStrength("");
       setNickname("");
       setTimeout(() => setMessage(null), 3000);
-
     } catch (err) {
       console.error("Error logging drink:", err);
       setError("Network hiccup or a gremlin in the machine. Try again.");
@@ -85,9 +100,16 @@ export default function DrinksForm() {
 
   return (
     // The parent div in app/page.tsx already has .themed-card
-    <form onSubmit={handleSubmit} className="space-y-var(--base-spacing) mt-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-[var(--base-spacing)] mt-[var(--large-spacing)]"
+    >
       <div>
-        <label htmlFor="drinkVolume" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+        <label
+          htmlFor="drinkVolume"
+          className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
           Volume (ml)
         </label>
         <input
@@ -100,7 +122,11 @@ export default function DrinksForm() {
         />
       </div>
       <div>
-        <label htmlFor="drinkStrength" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+        <label
+          htmlFor="drinkStrength"
+          className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
           Strength (% ABV)
         </label>
         <input
@@ -114,7 +140,11 @@ export default function DrinksForm() {
         />
       </div>
       <div>
-        <label htmlFor="drinkNickname" className="block text-sm font-medium font-sharetech mb-1" style={{color: 'var(--accent-color)'}}>
+        <label
+          htmlFor="drinkNickname"
+          className="block text-sm font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
           Nickname (optional, e.g., "Rocket Fuel")
         </label>
         <input
@@ -126,14 +156,22 @@ export default function DrinksForm() {
           placeholder="Your liver's nemesis"
         />
       </div>
-      <button
-        type="submit"
-        className="themed-button w-full font-vt323 text-lg"
-      >
+      <button type="submit" className="themed-button w-full font-vt323 text-lg">
         Log Drink
       </button>
-      {message && <p className="mt-2 text-sm font-sharetech" style={{color: 'var(--primary-color)'}}>{message}</p>}
-      {error && <p className="mt-2 text-sm font-sharetech text-red-500">{error}</p>}
+      {message && (
+        <p
+          className="mt-[var(--small-spacing)] text-sm font-sharetech"
+          style={{ color: "var(--primary-color)" }}
+        >
+          {message}
+        </p>
+      )}
+      {error && (
+        <p className="mt-[var(--small-spacing)] text-sm font-sharetech text-red-500">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

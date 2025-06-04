@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect, useCallback, useMemo} from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
 
 type GroupType = { id: string; name: string; public: boolean };
@@ -20,15 +20,22 @@ export default function GroupsWidget() {
   const [myGroups, setMyGroups] = useState<GroupType[]>([]);
   const [publicGroups, setPublicGroups] = useState<GroupType[]>([]);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const [loadingMyGroups, setLoadingMyGroups] = useState(false);
   const [loadingPublicGroups, setLoadingPublicGroups] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const getToken = useCallback(() => typeof window !== "undefined" ? localStorage.getItem("token") : null, []);
+  const getToken = useCallback(
+    () =>
+      typeof window !== "undefined" ? localStorage.getItem("token") : null,
+    [],
+  );
 
-  const displayFeedback = (type: 'success' | 'error', message: string) => {
+  const displayFeedback = (type: "success" | "error", message: string) => {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 4000);
   };
@@ -43,26 +50,30 @@ export default function GroupsWidget() {
 
     try {
       const [myGroupsRes, publicGroupsRes] = await Promise.all([
-        fetch("/api/group/my/", { headers: { "Authorization": `Bearer ${token}` } }),
-        fetch("/api/group/public/", { headers: token ? { "Authorization": `Bearer ${token}` } : {} })
+        fetch("/api/group/my/", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("/api/group/public/", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
       ]);
 
       if (myGroupsRes.ok) {
         setMyGroups(await myGroupsRes.json());
       } else {
         console.error("Failed to fetch my groups:", myGroupsRes.status);
-        displayFeedback('error', 'Failed to load your groups.');
+        displayFeedback("error", "Failed to load your groups.");
       }
 
       if (publicGroupsRes.ok) {
         setPublicGroups(await publicGroupsRes.json());
       } else {
         console.error("Failed to fetch public groups:", publicGroupsRes.status);
-        displayFeedback('error', 'Failed to load public groups.');
+        displayFeedback("error", "Failed to load public groups.");
       }
     } catch (err) {
       console.error("Error fetching group data", err);
-      displayFeedback('error', 'Error loading group data.');
+      displayFeedback("error", "Error loading group data.");
     } finally {
       setLoadingMyGroups(false);
       setLoadingPublicGroups(false);
@@ -80,32 +91,37 @@ export default function GroupsWidget() {
     method: string,
     actionGroupId: string | null,
     successMessage: string,
-    errorMessagePrefix: string
+    errorMessagePrefix: string,
   ) => {
     const token = getToken();
     if (!token) {
-      displayFeedback('error', "You're not logged in.");
+      displayFeedback("error", "You're not logged in.");
       return false;
     }
-    setLoadingAction(actionGroupId || 'true_action');
+    setLoadingAction(actionGroupId || "true_action");
 
     try {
       const res = await fetch(url, {
         method: method,
-        headers: { "Authorization": `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        displayFeedback('success', successMessage);
+        displayFeedback("success", successMessage);
         window.location.reload(); // Force context refresh
         return true;
       } else {
-        const error = await res.json().catch(() => ({ detail: "Unknown error." }));
-        displayFeedback('error', `${errorMessagePrefix}: ${error.detail}`);
+        const error = await res
+          .json()
+          .catch(() => ({ detail: "Unknown error." }));
+        displayFeedback("error", `${errorMessagePrefix}: ${error.detail}`);
         return false;
       }
     } catch (err) {
       console.error(`Error during ${errorMessagePrefix}:`, err);
-      displayFeedback('error', `Client-side error during ${errorMessagePrefix}.`);
+      displayFeedback(
+        "error",
+        `Client-side error during ${errorMessagePrefix}.`,
+      );
       return false;
     } finally {
       setLoadingAction(null);
@@ -113,63 +129,105 @@ export default function GroupsWidget() {
   };
 
   const handleSwitchGroup = (groupId: string) => {
-    makeGroupApiCall(`/api/group/switch/?group_id=${groupId}`, "POST", groupId, `Switched active group!`, "Failed to switch group");
+    makeGroupApiCall(
+      `/api/group/switch/?group_id=${groupId}`,
+      "POST",
+      groupId,
+      `Switched active group!`,
+      "Failed to switch group",
+    );
   };
 
   const handleGoSolo = () => {
-    makeGroupApiCall(`/api/group/switch/`, "POST", "goSolo", "You are now flying solo!", "Failed to go solo");
+    makeGroupApiCall(
+      `/api/group/switch/`,
+      "POST",
+      "goSolo",
+      "You are now flying solo!",
+      "Failed to go solo",
+    );
   };
 
   const handleJoinPublicGroup = (groupId: string) => {
-    makeGroupApiCall(`/api/group/join/${groupId}/`, "POST", groupId, `Successfully joined and switched to group!`, "Failed to join group");
+    makeGroupApiCall(
+      `/api/group/join/${groupId}/`,
+      "POST",
+      groupId,
+      `Successfully joined and switched to group!`,
+      "Failed to join group",
+    );
   };
 
   const handleLeaveGroup = (groupId: string) => {
-    if (window.confirm("Are you sure you want to permanently leave this group? This action cannot be undone.")) {
-      makeGroupApiCall(`/api/group/leave/${groupId}/`, "POST", groupId, "Successfully left group.", "Failed to leave group");
+    if (
+      window.confirm(
+        "Are you sure you want to permanently leave this group? This action cannot be undone.",
+      )
+    ) {
+      makeGroupApiCall(
+        `/api/group/leave/${groupId}/`,
+        "POST",
+        groupId,
+        "Successfully left group.",
+        "Failed to leave group",
+      );
     }
   };
 
   async function generateInviteLink() {
     const token = getToken();
     if (!token || !currentGroup || !currentGroup.id || currentGroup.public) {
-      displayFeedback('error', "Invite links are for current, private groups only.");
+      displayFeedback(
+        "error",
+        "Invite links are for current, private groups only.",
+      );
       return;
     }
     setLoadingAction(`invite-${currentGroup.id}`);
     try {
       const res = await fetch(`/api/group/invite-link/${currentGroup.id}/`, {
-         headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setInviteLink(data.invite_link);
-        displayFeedback('success', 'Invite link generated!');
+        displayFeedback("success", "Invite link generated!");
       } else {
-        const error = await res.json().catch(() => ({detail: "Failed to generate invite link"}));
-        displayFeedback('error', `Error generating invite link: ${error.detail}`);
+        const error = await res
+          .json()
+          .catch(() => ({ detail: "Failed to generate invite link" }));
+        displayFeedback(
+          "error",
+          `Error generating invite link: ${error.detail}`,
+        );
       }
     } catch (err) {
       console.error("Error generating invite link", err);
-      displayFeedback('error', 'Client-side error generating invite link.');
+      displayFeedback("error", "Client-side error generating invite link.");
     } finally {
       setLoadingAction(null);
     }
   }
 
-  const myGroupIds = useMemo(() => new Set(myGroups.map(g => g.id)), [myGroups]);
+  const myGroupIds = useMemo(
+    () => new Set(myGroups.map((g) => g.id)),
+    [myGroups],
+  );
 
   return (
     <div className="relative font-sharetech">
       <button
         onClick={() => setExpanded((prev) => !prev)}
-        className="themed-button text-sm p-2 min-w-[80px] md:min-w-[80px] text-left leading-tight" // Adjusted padding & leading
+        className="themed-button text-sm p-[var(--small-spacing)] min-w-[80px] md:min-w-[80px] text-left leading-tight" // Adjusted padding & leading
       >
         {currentGroup?.name ? (
           <>
-            <span className="font-semibold block truncate">{currentGroup.name}</span>
+            <span className="font-semibold block truncate">
+              {currentGroup.name}
+            </span>
             <span className="text-xs italic opacity-80">
-              ({currentGroup.public ? "Public" : "Private"}) {currentMembers.length} Mbr(s)
+              ({currentGroup.public ? "Public" : "Private"}){" "}
+              {currentMembers.length} Mbr(s)
             </span>
           </>
         ) : (
@@ -178,61 +236,137 @@ export default function GroupsWidget() {
       </button>
 
       {expanded && (
-         // Adjusted width: min-content, max-w-sm for mobile, md:max-w-md for larger.
-         // Increased max-h slightly, adjusted padding for less claustrophobia.
-        <div className="absolute z-50 top-full right-0 md:left-0 md:right-auto mt-2
-                       min-w-[300px] w-auto max-w-wd sm:max-w-md md:max-w-lg
-                       max-h-[150vh] overflow-y-auto
-                       themed-card p-var(--small-spacing) md:p-var(--base-spacing) shadow-2xl">
-
-          <div className="flex justify-between items-center mb-var(--base-spacing)"> {/* Increased mb */}
-            <h2 className="text-xl font-bold font-vt323" style={{color: 'var(--accent-color)'}}>Group Central</h2>
-            <button onClick={() => setExpanded(false)} className="text-sm hover:underline" style={{color: 'var(--text-color)'}}>Close</button>
+        // Adjusted width: min-content, max-w-sm for mobile, md:max-w-md for larger.
+        // Increased max-h slightly, adjusted padding for less claustrophobia.
+        <div
+          className="absolute z-50 top-full right-0 md:left-0 md:right-auto mt-[var(--small-spacing)]
+                         min-w-[300px] w-auto max-w-wd sm:max-w-md md:max-w-lg
+                         max-h-[150vh] overflow-y-auto
+                         themed-card p-[var(--small-spacing)] md:p-[var(--base-spacing)] shadow-2xl"
+        >
+          <div className="flex justify-between items-center mb-[var(--base-spacing)]">
+            {" "}
+            {/* Increased mb */}
+            <h2
+              className="text-xl font-bold font-vt323"
+              style={{ color: "var(--accent-color)" }}
+            >
+              Group Central
+            </h2>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-sm hover:underline"
+              style={{ color: "var(--text-color)" }}
+            >
+              Close
+            </button>
           </div>
 
           {feedback && (
-            <div className={`p-2 mb-var(--base-spacing) text-xs rounded ${feedback.type === 'error' ? 'bg-red-700 text-white' : 'bg-green-700 text-white'}`}>
+            <div
+              className={`p-[var(--small-spacing)] mb-[var(--base-spacing)] text-xs rounded ${feedback.type === "error" ? "bg-red-700 text-white" : "bg-green-700 text-white"}`}
+            >
               {feedback.message}
             </div>
           )}
 
-          {/* Increased spacing between major sections using space-y-var(--golden-spacing) */}
-          <div className="space-y-var(--golden-spacing)">
+          {/* Increased spacing between major sections using space-y-[var(--golden-spacing)] */}
+          <div className="space-y-[var(--golden-spacing)]">
             {/* Current Group Info & Actions */}
-            <section> {/* Changed div to section for semantics */}
-              <h3 className="font-semibold mb-2 border-b pb-1.5 text-lg" style={{borderColor: 'var(--card-border-color)', color: 'var(--primary-color)'}}>Active Session</h3>
+            <section>
+              {" "}
+              {/* Changed div to section for semantics */}
+              <h3
+                className="font-semibold mb-[var(--small-spacing)] border-b pb-[var(--small-spacing)] text-lg"
+                style={{
+                  borderColor: "var(--card-border-color)",
+                  color: "var(--primary-color)",
+                }}
+              >
+                Active Session
+              </h3>
               {currentGroup ? (
-                <div className="text-sm space-y-3"> {/* Increased space-y */}
-                  <p><span className="font-medium">Group:</span> {currentGroup.name} ({currentGroup.public ? "Public" : "Private"})</p>
+                <div className="text-sm space-y-[var(--base-spacing)]">
+                  {" "}
+                  {/* Increased space-y */}
+                  <p>
+                    <span className="font-medium">Group:</span>{" "}
+                    {currentGroup.name} (
+                    {currentGroup.public ? "Public" : "Private"})
+                  </p>
                   {currentMembers.length > 0 && (
                     <div>
-                      <h4 className="font-medium text-xs mb-0.5">Members ({currentMembers.length}):</h4>
-                      <ul className="list-none pl-2 space-y-1 max-h-24 overflow-y-auto text-xs border rounded p-1.5" style={{borderColor: 'var(--input-border)', background: 'var(--input-bg)'}}>
+                      <h4 className="font-medium text-xs mb-[var(--tiny-spacing)]">
+                        Members ({currentMembers.length}):
+                      </h4>
+                      <ul
+                        className="list-none pl-[var(--small-spacing)] space-y-[var(--tiny-spacing)] max-h-24 overflow-y-auto text-xs border rounded p-[var(--small-spacing)]"
+                        style={{
+                          borderColor: "var(--input-border)",
+                          background: "var(--input-bg)",
+                        }}
+                      >
                         {currentMembers.map((member) => (
-                          <li key={member.id} className={member.id === state.self.id ? 'font-bold' : ''}>
+                          <li
+                            key={member.id}
+                            className={
+                              member.id === state.self.id ? "font-bold" : ""
+                            }
+                          >
                             {member.displayName}
-                            {member.isOwner && (<span className="italic text-xs opacity-70"> (Owner)</span>)}
+                            {member.isOwner && (
+                              <span className="italic text-xs opacity-70">
+                                {" "}
+                                (Owner)
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
                   {!currentGroup.public && (
-                    <div className="mt-2.5"> {/* Increased mt */}
-                      <button onClick={generateInviteLink} disabled={!!loadingAction} className="themed-button text-xs py-1 px-2.5 w-full"> {/* Adjusted padding */}
-                        {loadingAction === `invite-${currentGroup.id}` ? "Generating..." : "Generate Invite Link"}
+                    <div className="mt-[var(--base-spacing)]">
+                      {" "}
+                      {/* Increased mt */}
+                      <button
+                        onClick={generateInviteLink}
+                        disabled={!!loadingAction}
+                        className="themed-button text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)] w-full"
+                      >
+                        {" "}
+                        {/* Adjusted padding */}
+                        {loadingAction === `invite-${currentGroup.id}`
+                          ? "Generating..."
+                          : "Generate Invite Link"}
                       </button>
                       {inviteLink && (
-                        <input type="text" readOnly value={inviteLink} className="themed-input text-xs p-1.5 w-full mt-1.5" onClick={(e) => (e.target as HTMLInputElement).select()} />
+                        <input
+                          type="text"
+                          readOnly
+                          value={inviteLink}
+                          className="themed-input text-xs p-[var(--small-spacing)] w-full mt-[var(--small-spacing)]"
+                          onClick={(e) =>
+                            (e.target as HTMLInputElement).select()
+                          }
+                        />
                       )}
                     </div>
                   )}
-                  <button onClick={handleGoSolo} disabled={!!loadingAction} className="themed-button-danger text-xs py-1 px-2.5 w-full mt-2.5"> {/* Adjusted padding */}
-                    {loadingAction === 'goSolo' ? "Processing..." : "Go Solo (Deactivate Group)"}
+                  <button
+                    onClick={handleGoSolo}
+                    disabled={!!loadingAction}
+                    className="themed-button-danger text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)] w-full mt-[var(--base-spacing)]"
+                  >
+                    {" "}
+                    {/* Adjusted padding */}
+                    {loadingAction === "goSolo"
+                      ? "Processing..."
+                      : "Go Solo (Deactivate Group)"}
                   </button>
                 </div>
               ) : (
-                <div className="text-sm space-y-2">
+                <div className="text-sm space-y-[var(--small-spacing)]">
                   <p>You are currently flying solo.</p>
                 </div>
               )}
@@ -240,58 +374,134 @@ export default function GroupsWidget() {
 
             {/* My Groups */}
             <section>
-              <h4 className="font-semibold mb-2 border-b pb-1.5 text-lg" style={{borderColor: 'var(--card-border-color)', color: 'var(--primary-color)'}}>My Groups ({myGroups.length})</h4>
-              {loadingMyGroups ? <p className="text-xs">Loading your groups...</p> :
-                myGroups.length > 0 ? (
-                  <ul className="space-y-2 text-sm max-h-32 overflow-y-auto"> {/* Increased space-y */}
-                    {myGroups.map((group) => (
-                      <li key={group.id} className="flex justify-between items-center p-1.5 rounded hover:bg-[rgba(128,128,128,0.1)]"> {/* Increased p */}
-                        <div className="truncate pr-2">
-                          {group.name}
-                          <span className="italic text-xs opacity-70 ml-1">({group.public ? "Public" : "Private"})</span>
-                          {group.id === currentGroup?.id && <span className="text-xs font-bold ml-1" style={{color: 'var(--accent-color)'}}>(Active)</span>}
-                        </div>
-                        <div className="flex-shrink-0 flex gap-1.5"> {/* Increased gap */}
-                          {group.id !== currentGroup?.id && (
-                            <button onClick={() => handleSwitchGroup(group.id)} disabled={!!loadingAction} className="themed-button text-xs py-1 px-2"> {/* Adjusted padding */}
-                              {loadingAction === group.id ? "..." : "Switch"}
-                            </button>
-                          )}
-                          <button onClick={() => handleLeaveGroup(group.id)} disabled={!!loadingAction} className="themed-button-danger text-xs py-1 px-2"> {/* Adjusted padding */}
-                            {loadingAction === group.id ? "..." : "Leave"}
+              <h4
+                className="font-semibold mb-[var(--small-spacing)] border-b pb-[var(--small-spacing)] text-lg"
+                style={{
+                  borderColor: "var(--card-border-color)",
+                  color: "var(--primary-color)",
+                }}
+              >
+                My Groups ({myGroups.length})
+              </h4>
+              {loadingMyGroups ? (
+                <p className="text-xs">Loading your groups...</p>
+              ) : myGroups.length > 0 ? (
+                <ul className="space-y-[var(--small-spacing)] text-sm max-h-32 overflow-y-auto">
+                  {" "}
+                  {/* Increased space-y */}
+                  {myGroups.map((group) => (
+                    <li
+                      key={group.id}
+                      className="flex justify-between items-center p-[var(--small-spacing)] rounded hover:bg-[rgba(128,128,128,0.1)]"
+                    >
+                      {" "}
+                      {/* Increased p */}
+                      <div className="truncate pr-2">
+                        {group.name}
+                        <span className="italic text-xs opacity-70 ml-1">
+                          ({group.public ? "Public" : "Private"})
+                        </span>
+                        {group.id === currentGroup?.id && (
+                          <span
+                            className="text-xs font-bold ml-1"
+                            style={{ color: "var(--accent-color)" }}
+                          >
+                            (Active)
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 flex gap-[var(--small-spacing)]">
+                        {" "}
+                        {/* Increased gap */}
+                        {group.id !== currentGroup?.id && (
+                          <button
+                            onClick={() => handleSwitchGroup(group.id)}
+                            disabled={!!loadingAction}
+                            className="themed-button text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)]"
+                          >
+                            {" "}
+                            {/* Adjusted padding */}
+                            {loadingAction === group.id ? "..." : "Switch"}
                           </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-xs italic">You haven't joined or created any groups yet.</p>
-              }
+                        )}
+                        <button
+                          onClick={() => handleLeaveGroup(group.id)}
+                          disabled={!!loadingAction}
+                          className="themed-button-danger text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)]"
+                        >
+                          {" "}
+                          {/* Adjusted padding */}
+                          {loadingAction === group.id ? "..." : "Leave"}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs italic">
+                  You haven't joined or created any groups yet.
+                </p>
+              )}
             </section>
 
             {/* Public Groups - Now correctly filtered */}
             <section>
-              <h4 className="font-semibold mb-2 border-b pb-1.5 text-lg" style={{borderColor: 'var(--card-border-color)', color: 'var(--primary-color)'}}>
-                Public Groups ({publicGroups.filter(publicGroup => !myGroupIds.has(publicGroup.id)).length})
+              <h4
+                className="font-semibold mb-[var(--small-spacing)] border-b pb-[var(--small-spacing)] text-lg"
+                style={{
+                  borderColor: "var(--card-border-color)",
+                  color: "var(--primary-color)",
+                }}
+              >
+                Public Groups (
+                {
+                  publicGroups.filter(
+                    (publicGroup) => !myGroupIds.has(publicGroup.id),
+                  ).length
+                }
+                )
               </h4>
-              {loadingPublicGroups ? <p className="text-xs">Loading public groups...</p> :
+              {loadingPublicGroups ? (
+                <p className="text-xs">Loading public groups...</p>
+              ) : (
                 (() => {
-                  const availablePublicGroups = publicGroups.filter(publicGroup => !myGroupIds.has(publicGroup.id));
+                  const availablePublicGroups = publicGroups.filter(
+                    (publicGroup) => !myGroupIds.has(publicGroup.id),
+                  );
                   return availablePublicGroups.length > 0 ? (
-                    <ul className="space-y-2 text-sm max-h-32 overflow-y-auto"> {/* Increased space-y */}
+                    <ul className="space-y-[var(--small-spacing)] text-sm max-h-32 overflow-y-auto">
+                      {" "}
+                      {/* Increased space-y */}
                       {availablePublicGroups.map((group) => (
-                        <li key={group.id} className="flex justify-between items-center p-1.5 rounded hover:bg-[rgba(128,128,128,0.1)]"> {/* Increased p */}
+                        <li
+                          key={group.id}
+                          className="flex justify-between items-center p-[var(--small-spacing)] rounded hover:bg-[rgba(128,128,128,0.1)]"
+                        >
+                          {" "}
+                          {/* Increased p */}
                           <span className="truncate pr-2">{group.name}</span>
                           <div className="flex-shrink-0">
-                            <button onClick={() => handleJoinPublicGroup(group.id)} disabled={!!loadingAction} className="themed-button text-xs py-1 px-2 bg-green-600 hover:bg-green-500"> {/* Adjusted padding */}
+                            <button
+                              onClick={() => handleJoinPublicGroup(group.id)}
+                              disabled={!!loadingAction}
+                              className="themed-button text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)] bg-green-600 hover:bg-green-500"
+                            >
+                              {" "}
+                              {/* Adjusted padding */}
                               {loadingAction === group.id ? "..." : "Join"}
                             </button>
                           </div>
                         </li>
                       ))}
                     </ul>
-                  ) : <p className="text-xs italic">No new public groups to join (or you're already a member of all of them).</p>;
+                  ) : (
+                    <p className="text-xs italic">
+                      No new public groups to join (or you're already a member
+                      of all of them).
+                    </p>
+                  );
                 })()
-              }
+              )}
             </section>
           </div>
         </div>
