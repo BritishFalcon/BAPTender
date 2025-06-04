@@ -36,11 +36,22 @@ export default function RegisterForm({ onLogin }: { onLogin: (token: string) => 
 
     try {
       console.log("Registering with form:", form);
-      // CORRECTED URL for register
+      // Convert camelCase fields to snake_case for the API
+      const payload = {
+        email: form.email,
+        password: form.password,
+        display_name: form.displayName,
+        weight: form.weight,
+        height: form.height,
+        gender: form.gender,
+        dob: form.dob,
+        real_dob: form.realDob,
+      };
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
