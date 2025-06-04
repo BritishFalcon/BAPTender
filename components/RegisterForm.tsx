@@ -6,12 +6,12 @@ export default function RegisterForm({ onLogin }: { onLogin: (token: string) => 
   const [form, setForm] = useState({
     email: "",
     password: "",
-    display_name: "",
+    displayName: "",
     weight: 70,
     height: 175,
-    gender: "male", // Ensure this matches one of your backend's accepted normalized values
+    gender: "male",
     dob: "",
-    real_dob: true,
+    realDob: true,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +92,7 @@ export default function RegisterForm({ onLogin }: { onLogin: (token: string) => 
       {/* Display Name */}
       <div>
         <label className="block text-xs font-medium font-sharetech mb-0.5" style={{color: 'var(--accent-color)'}}>Display Name</label>
-        <input type="text" placeholder="Display Name" required value={form.display_name} onChange={(e) => updateField("display_name", e.target.value)} className="themed-input text-sm p-2"/>
+        <input type="text" placeholder="Display Name" required value={form.displayName} onChange={(e) => updateField("displayName", e.target.value)} className="themed-input text-sm p-2"/>
       </div>
       {/* Weight */}
       <div>
@@ -120,8 +120,8 @@ export default function RegisterForm({ onLogin }: { onLogin: (token: string) => 
       </div>
       {/* Real DOB Checkbox */}
       <div className="flex items-center gap-2">
-        <input id="real_dob" type="checkbox" checked={form.real_dob} onChange={(e) => updateField("real_dob", e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[color:var(--primary-color)] focus:ring-[color:var(--primary-color)]" style={{borderColor: 'var(--input-border)'}}/>
-        <label htmlFor="real_dob" className="text-xs font-sharetech" style={{color: 'var(--text-color)'}}>This is my real date of birth</label>
+        <input id="realDob" type="checkbox" checked={form.realDob} onChange={(e) => updateField("realDob", e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[color:var(--primary-color)] focus:ring-[color:var(--primary-color)]" style={{borderColor: 'var(--input-border)'}}/>
+        <label htmlFor="realDob" className="text-xs font-sharetech" style={{color: 'var(--text-color)'}}>This is my real date of birth</label>
       </div>
 
       {error && <p className="text-xs font-sharetech text-red-500 py-1">{error}</p>}

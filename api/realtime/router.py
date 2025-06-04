@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from uuid import UUID
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from api.auth.auth import ALGORITHM, SECRET
 from api.drinks.models import Drink
@@ -25,99 +25,104 @@ router = APIRouter()
 group_connections: Dict[Optional[UUID], Dict[UUID, WebSocket]] = {}
 
 
-async def generate_initial_state(user: User, group: Group | None):
+async def generate_initial_state(user: User, group: Optional[Group]):
     async for session in get_async_session():
-        # Determine relevant users
-        if group is None or group.name is None:
-            relevant_users = [user]
-            active_user_ids = [user.id]
-        else:
-            result = await session.execute(
+        relevant_user_objects: List[User] = []
+        user_ids_in_current_context: List[UUID] = []  # IDs of users relevant to the current context (group or solo)
+
+        if group is None:  # User is solo
+            relevant_user_objects = [user]
+            user_ids_in_current_context = [user.id]
+        else:  # User is in a group
+            user_group_entries = await session.execute(
                 select(UserGroup)
-                .options(joinedload(UserGroup.user))
+                .options(
+                    selectinload(UserGroup.user)  # Eager load the full User object
+                )
                 .where(UserGroup.group_id == group.id)
             )
-            user_groups = result.scalars().all()
+            # Filter out entries where ug.user might be None if DB relationship is nullable (though typically not for FK)
+            relevant_user_objects = [ug.user for ug in user_group_entries.scalars().unique().all() if ug.user]
+            user_ids_in_current_context = [u.id for u in relevant_user_objects]
 
-            relevant_users = [ug.user for ug in user_groups]
-            active_user_ids = [ug.user_id for ug in user_groups if ug.active]
+        all_drinks_list: List[Drink] = []
+        if user_ids_in_current_context:  # Only fetch if there are users
+            all_drinks_result = await session.execute(
+                select(Drink)
+                .where(Drink.user_id.in_(user_ids_in_current_context))
+                .order_by(Drink.add_time.asc())
+            )
+            all_drinks_list = all_drinks_result.scalars().all()
 
-        # Fetch drinks
-        result = await session.execute(
-            select(Drink).where(Drink.user_id.in_(active_user_ids))
-        )
-        drinks = result.scalars().all()
-
-        # Group drinks per user
-        drinks_by_user: dict[str, list[dict]] = {}
-        for d in drinks:
+        drinks_by_user: Dict[str, List[Dict]] = {}
+        for d_drink in all_drinks_list:
             entry = {
-                "id": str(d.id),
-                "nickname": d.nickname,
-                "volume": d.volume,
-                "strength": d.strength,
-                "time": d.add_time,
+                "id": str(d_drink.id),
+                "nickname": d_drink.nickname,
+                "volume": d_drink.volume,
+                "strength": d_drink.strength,
+                "time": d_drink.add_time,  # This is a datetime object
             }
-            drinks_by_user.setdefault(str(d.user_id), []).append(entry)
+            drinks_by_user.setdefault(str(d_drink.user_id), []).append(entry)
 
-        # Members list TODO: Change this to a dict
-        members = []
-        for u in relevant_users:
-            members.append({
-                "id": str(u.id),
-                "display_name": u.display_name,
-                "is_owner": (group and group.owner_id == u.id) if group else False,
-                "active": u.id in active_user_ids,
+        members_list_for_ws: List[Dict] = []
+        for u_member in relevant_user_objects:
+            # Ensure all fields for UserType (matching frontend) are present with snake_case keys
+            members_list_for_ws.append({
+                "id": str(u_member.id),
+                "displayName": u_member.display_name,  # snake_case
+                "email": u_member.email,
+                "weight": u_member.weight,
+                "gender": u_member.gender,
+                "height": u_member.height,
+                "dob": u_member.dob.isoformat() if u_member.dob else None,  # snake_case
+                "realDob": u_member.real_dob,  # snake_case
+                "isOwner": (group and group.owner_id == u_member.id) if group else (u_member.id == user.id),
+                # snake_case
+                "active": True,  # Assuming 'active' means present in this group context for the message
             })
 
-        # States per user
-        states = {}
-        for u in relevant_users:
-            if u.id not in active_user_ids:
-                continue  # Skip inactive
+        states_by_user: Dict[str, List[Dict]] = {}
+        for u_member in relevant_user_objects:
+            # Ensure u_member has necessary attributes for BAC calculation
+            if not all([hasattr(u_member, attr) for attr in ['dob', 'weight', 'gender']]):
+                # logging.warning(f"User {u_member.id} missing attributes for BAC calc in init, skipping states.")
+                states_by_user[str(u_member.id)] = []
+                continue
 
-            age = (datetime.now(timezone.utc).date() - user.dob).days / 365
-            user_data = {
-                "weight": u.weight,
-                "gender": u.gender,
-                "height": u.height,
-                "age": age,
+            age_in_days = (datetime.now(timezone.utc).date() - u_member.dob).days
+            age_in_years = age_in_days / 365.25
+
+            user_data_for_bac = {
+                "weight": u_member.weight,
+                "gender": u_member.gender,
+                "height": u_member.height,  # Can be None
+                "age": age_in_years,
             }
+            # Ensure drinks have datetime objects for 'time' key for drinks_to_bac
+            member_drinks_for_bac_calc = drinks_by_user.get(str(u_member.id), [])
+            states_by_user[str(u_member.id)] = drinks_to_bac(member_drinks_for_bac_calc, user_data_for_bac)
 
-            u_drinks = [
-                {
-                    "id": d["id"],
-                    "nickname": d["nickname"],
-                    "volume": d["volume"],
-                    "strength": d["strength"],
-                    "time": d["time"],
-                }
-                for d in drinks_by_user.get(str(u.id), [])
-            ]
-
-            states[str(u.id)] = drinks_to_bac(u_drinks, user_data)
+        self_profile_data = next((m for m in members_list_for_ws if m["id"] == str(user.id)), None)
+        if not self_profile_data:
+            self_profile_data = {  # Fallback for truly solo user not in any group structure yet
+                "id": str(user.id), "displayName": user.display_name, "email": user.email,
+                "weight": user.weight, "gender": user.gender, "height": user.height,
+                "dob": user.dob.isoformat() if user.dob else None, "realDob": user.real_dob,
+                "isOwner": True, "active": True,
+            }
 
         return {
             "type": "init",
-            "self": {
-                "id": str(user.id),
-                "display_name": user.display_name,
-                "is_owner": (group and user.id == group.owner_id) if group else False,
-                "email": user.email,
-                "weight": user.weight,
-                "gender": user.gender,
-                "height": user.height,
-                "dob": user.dob,
-                "real_dob": user.real_dob,
-            },
+            "self": self_profile_data,
             "group": {
                 "id": str(group.id) if group else None,
                 "name": group.name if group else None,
                 "public": group.public if group else False,
-            },
-            "members": members,
-            "drinks": drinks_by_user,  # grouped by user_id
-            "states": states,          # grouped by user_id
+            } if group else None,  # Send group as null if not in a group
+            "members": members_list_for_ws,
+            "drinks": drinks_by_user,
+            "states": states_by_user,
         }
 
 
@@ -175,75 +180,110 @@ async def push_update(user_id: UUID):
                     del group_connections[group_id][user_id]
 
 
-async def update_user(user: User, group: Group):
-    print("Updating user")
+async def update_user(user: User, group: Optional[Group]):
+    # The 'user' object passed here IS the already updated user instance from the database
+    print(f"WebSocket: Preparing update for user {user.id} due to profile/drink change.")
 
-    # Start async session to query the database
     async for session in get_async_session():
-        if not getattr(group, "id", None):
-            active_users = [user]
-        else:
-            result = await session.execute(
-                select(UserGroup)
-                .options(joinedload(UserGroup.user))
-                .where(UserGroup.group_id == group.id)
-            )
-            user_groups = result.scalars().all()
-            active_users = [ug.user for ug in user_groups if ug.active]
-
-        # Collect OP's drinks
-        result = await session.execute(
-            select(Drink).where(Drink.user_id == user.id)
-        )
-        drinks = result.scalars().all()
-
-        format_drinks = []
-        for d in drinks:
-            entry = {
-                "id": str(d.id),
-                "nickname": d.nickname,
-                "volume": d.volume,
-                "strength": d.strength,
-                "time": d.add_time,
-            }
-            format_drinks.append(entry)
-
-        member_data = {
+        # 1. Prepare the comprehensive updated user profile using snake_case keys
+        profile_data_for_ws = {
             "id": str(user.id),
-            "display_name": user.display_name,
-            "is_owner": (group and group.owner_id == user.id) if group else False,
-            "active": True,
-        }
-
-        age = (datetime.now(timezone.utc).date() - user.dob).days / 365
-        user_data = {
+            "displayName": user.display_name,
+            "email": user.email,
             "weight": user.weight,
             "gender": user.gender,
             "height": user.height,
-            "age": age,
+            "dob": user.dob.isoformat() if user.dob else None,
+            "realDob": user.real_dob,
+            "isOwner": (group and group.owner_id == user.id) if group else False,
+            "active": True,  # User whose data is being updated is considered active in this context
         }
 
-        states = drinks_to_bac(format_drinks, user_data)
+        # 2. Fetch user's current drinks
+        drinks_result = await session.execute(
+            select(Drink).where(Drink.user_id == user.id).order_by(Drink.add_time.asc())
+        )
+        user_drinks_list = drinks_result.scalars().all()
 
-        update = {
+        format_drinks_for_ws = []
+        for d_drink in user_drinks_list:
+            entry = {
+                "id": str(d_drink.id), "nickname": d_drink.nickname, "volume": d_drink.volume,
+                "strength": d_drink.strength, "time": d_drink.add_time,  # datetime object
+            }
+            format_drinks_for_ws.append(entry)
+
+        # 3. Recalculate BAC states for the updated user
+        # Ensure 'user' object has necessary attributes
+        if not all([hasattr(user, attr) for attr in ['dob', 'weight', 'gender']]):
+            # logging.error(f"User {user.id} missing attributes for BAC calc in update_user, sending empty states.")
+            calculated_states_for_ws = []
+        else:
+            age_in_days = (datetime.now(timezone.utc).date() - user.dob).days
+            age_in_years = age_in_days / 365.25
+            user_data_for_bac = {
+                "weight": user.weight, "gender": user.gender,
+                "height": user.height, "age": age_in_years,
+            }
+            calculated_states_for_ws = drinks_to_bac(format_drinks_for_ws, user_data_for_bac)
+
+        # 4. Construct the final WebSocket update message
+        update_message = {
             "type": "update",
-            "user": str(user.id),
-            "member": member_data,
-            "drinks": format_drinks,
-            "states": states,
+            "user_id_updated": str(user.id),  # ID of the user whose data changed
+            "profile": profile_data_for_ws,  # Their comprehensive updated profile (snake_case keys)
+            "drinks": format_drinks_for_ws,  # Their latest drinks list
+            "states": calculated_states_for_ws,  # Their latest BAC states
         }
 
-        # Loop through active users and try to send updates
-        for u in active_users:
-            group_id = group.id if group else None
-            if u.id in group_connections.get(group_id, {}):
+        # 5. Determine broadcast list
+        target_connections: Dict[UUID, WebSocket] = {}
+        # If in a group, broadcast to all group members.
+        # If solo, this update is primarily for themselves if they have a solo connection.
+        # The original logic for `update_user` fetched active_users based on the group passed.
+        # We'll replicate that to determine who to send to.
+
+        users_to_notify: List[User] = []
+        group_id_for_lookup = group.id if group else None
+
+        if group:  # If the updated user was associated with a group for this update context
+            user_group_entries = await session.execute(
+                select(UserGroup).options(selectinload(UserGroup.user))
+                .where(UserGroup.group_id == group.id)
+                # .where(UserGroup.group_id == group.id, UserGroup.active == True) # Or only to active members
+            )
+            # users_to_notify = [ug.user for ug in user_group_entries.scalars().unique().all() if ug.user]
+            # For profile updates, all members of the group should get it to update their member list
+            temp_users_to_notify = [ug.user for ug in user_group_entries.scalars().unique().all() if ug.user]
+            if user not in temp_users_to_notify:  # ensure the user themselves is in the list if they are in the group
+                users_to_notify = temp_users_to_notify + [user]
+                users_to_notify = list(set(users_to_notify))  # make unique
+            else:
+                users_to_notify = temp_users_to_notify
+
+        else:  # User is solo, notification primarily for themselves
+            users_to_notify = [user]
+            group_id_for_lookup = None  # For solo connections stored under None key
+
+        print(
+            f"WebSocket: Broadcasting update for user {user.id} to {len(users_to_notify)} potential user(s) in context of group {group_id_for_lookup}.")
+
+        active_connections_in_context = group_connections.get(group_id_for_lookup, {})
+
+        for target_user in users_to_notify:
+            if target_user.id in active_connections_in_context:
+                websocket_conn = active_connections_in_context[target_user.id]
                 try:
-                    await group_connections[group_id][u.id].send_text(json.dumps(update, default=str))
-                except RuntimeError as e:
-                    # Log the error (closed connection) and clean up
-                    logging.warning(f"WebSocket for user {u.id} is closed: {e}")
-                    # Remove the closed connection from the group_connections
-                    del group_connections[group_id][u.id]
+                    await websocket_conn.send_text(json.dumps(update_message, default=str))
+                    print(f"WebSocket: Sent update (for user {user.id}) to user {target_user.id}")
+                except (RuntimeError, WebSocketDisconnect) as e:
+                    logging.warning(f"WebSocket for user {target_user.id} is closed or errored: {e}. Cleaning up.")
+                    del active_connections_in_context[target_user.id]  # Remove from the specific group/solo dict
+                    if not active_connections_in_context:  # If the group dict is now empty
+                        if group_id_for_lookup in group_connections:
+                            del group_connections[group_id_for_lookup]
+                except Exception as e_general:
+                    logging.error(f"WebSocket: Unexpected error sending to {target_user.id}: {e_general}")
 
 
 @router.websocket("/ws")

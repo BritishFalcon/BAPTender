@@ -137,7 +137,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
       currentDataPoints.sort((a, b) => a.x - b.x);
 
       const member = state.members.find((m: any) => m.id === uid);
-      const label = member?.display_name || uid;
+      const label = member?.displayName || uid;
       const color = themeColorCycle(colorIndex++, currentThemeColors);
 
       newDatasets.push({

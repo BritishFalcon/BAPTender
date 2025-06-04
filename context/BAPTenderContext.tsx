@@ -12,7 +12,7 @@ type UserType = {
   gender: string;
   height: number;
   dob: string;
-  real_dob: boolean;
+  realDob: boolean;
 };
 
 type GroupType = {
@@ -61,7 +61,7 @@ const defaultState: BAPTenderState = {
     gender: "",
     height: -1,
     dob: "",
-    real_dob: false,
+    realDob: false,
   },
   group: {
     id: "",
@@ -137,18 +137,34 @@ export function BAPTenderProvider({
           // Replace entire state with incoming data
           setState(data);
         } else if (data.type === "update") {
-          console.log("Provider: Updating state with update message");
-          setState((prev) => ({
-            ...prev,
-            drinks: {
-              ...prev.drinks,
-              [data.user]: data.drinks,
-            },
-            states: {
-              ...prev.states,
-              [data.user]: data.states,
-            },
-          }));
+          console.log("Provider: Updating state with update message", data);
+          const { user_id_updated, profile, drinks, states } = data;
+        
+          setState((prev) => {
+            // Create a new members array with the updated user profile
+            const newMembers = prev.members.map((member) =>
+              member.id === user_id_updated ? { ...member, ...profile } : member
+            );
+
+            // Check if the updated user is the 'self' user
+            const newSelf = prev.self.id === user_id_updated
+              ? { ...prev.self, ...profile }
+              : prev.self;
+
+            return {
+              ...prev,
+              self: newSelf,
+              members: newMembers,
+              drinks: {
+                ...prev.drinks,
+                [user_id_updated]: drinks, // Use the correct key and data
+              },
+              states: {
+                ...prev.states,
+                [user_id_updated]: states, // Use the correct key and data
+              },
+            };
+          });
         } else {
           console.warn("Provider: Unknown message type:", data.type);
         }
