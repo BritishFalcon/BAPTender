@@ -109,80 +109,52 @@ export function BAPTenderProvider({
   }, [state]);
 
   useEffect(() => {
-    // If there's no token yet, don't open the WebSocket
     if (!token) {
-      console.log("No token yet, not opening WS");
+      console.log("No token yet, not opening SSE");
       return;
     }
 
-    console.log("Opening WS with token:", token);
-    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsHost = window.location.host;
-    const wsUrl = `${wsScheme}://${wsHost}/api/realtime/ws?token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
+    const scheme = window.location.protocol === "https:" ? "https" : "http";
+    const host = window.location.host;
+    const url = `${scheme}://${host}/api/realtime/events?token=${encodeURIComponent(token)}`;
+    let es: EventSource | null = new EventSource(url);
 
-    ws.onopen = () => {
-      console.log("Provider WS connection opened");
-    };
-
-    ws.onmessage = (event) => {
-      console.log("Provider Received WS message raw:", event.data);
+    es.onmessage = (event) => {
       setRawMessage(event.data);
       try {
         const data = JSON.parse(event.data);
-        console.log("Provider Parsed WS data:", data);
-
         if (data.type === "init") {
-          console.log("Provider: Setting state with init message");
-          // Replace entire state with incoming data
           setState(data);
         } else if (data.type === "update") {
-          console.log("Provider: Updating state with update message", data);
           const { user_id_updated, profile, drinks, states } = data;
-        
           setState((prev) => {
-            // Create a new members array with the updated user profile
-            const newMembers = prev.members.map((member) =>
-              member.id === user_id_updated ? { ...member, ...profile } : member
-            );
-
-            // Check if the updated user is the 'self' user
-            const newSelf = prev.self.id === user_id_updated
-              ? { ...prev.self, ...profile }
-              : prev.self;
-
+            const newMembers = prev.members.map((m) => m.id === user_id_updated ? { ...m, ...profile } : m);
+            const newSelf = prev.self.id === user_id_updated ? { ...prev.self, ...profile } : prev.self;
             return {
               ...prev,
               self: newSelf,
               members: newMembers,
-              drinks: {
-                ...prev.drinks,
-                [user_id_updated]: drinks, // Use the correct key and data
-              },
-              states: {
-                ...prev.states,
-                [user_id_updated]: states, // Use the correct key and data
-              },
+              drinks: { ...prev.drinks, [user_id_updated]: drinks },
+              states: { ...prev.states, [user_id_updated]: states },
             };
           });
-        } else {
-          console.warn("Provider: Unknown message type:", data.type);
         }
-      } catch (error) {
-        console.error("Provider: Error parsing WS message:", error, "Raw data:", event.data);
+      } catch (e) {
+        console.error("SSE parse error", e, event.data);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("Provider WS error:", error);
-    };
+    es.addEventListener("revoke", () => {
+      es?.close();
+      es = new EventSource(url);
+    });
 
-    ws.onclose = (event) => {
-      console.log("Provider WS closed:", event);
+    es.onerror = (err) => {
+      console.error("SSE error", err);
     };
 
     return () => {
-      ws.close();
+      es?.close();
     };
   }, [token]);
 

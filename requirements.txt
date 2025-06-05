@@ -6,3 +6,4 @@ fastapi-users[sqlalchemy]
 asyncpg
 apscheduler
 pyjwt
+sse-starlette

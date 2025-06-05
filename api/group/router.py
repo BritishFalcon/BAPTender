@@ -17,7 +17,8 @@ from api.auth.models import User
 
 from fastapi import Query
 
-from api.realtime.router import update_user
+from api.realtime.sse_manager import broadcaster
+from api.realtime.router import broadcast_user_update
 
 router = APIRouter()
 
@@ -70,7 +71,7 @@ async def create_group(
         await session.rollback()
         raise HTTPException(status_code=409, detail="Group name already taken!")
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(broadcast_user_update(user, group))
 
     return group
 
@@ -85,6 +86,15 @@ async def switch_group(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
+    # Determine currently active group before switching
+    old_result = await session.execute(
+        select(UserGroup.group_id).where(
+            UserGroup.user_id == user.id,
+            UserGroup.active.is_(True),
+        )
+    )
+    old_group_ids = old_result.scalars().all()
+
     # Deactivate all groups first
     await session.execute(
         update(UserGroup)
@@ -111,13 +121,16 @@ async def switch_group(
 
     await session.commit()
 
+    for gid in old_group_ids:
+        broadcaster.revoke_user(gid, user.id)
+
     group_result = await session.execute(select(Group).where(Group.id == group_id))
     group = group_result.scalar_one_or_none()
 
     if not group:
         raise HTTPException(status_code=404, detail="Group not found.")
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(broadcast_user_update(user, group))
 
     return group
 
@@ -226,7 +239,7 @@ async def join_group_public(
     session.add(user_group)
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(broadcast_user_update(user, group))
 
     return group
 
@@ -280,7 +293,7 @@ async def join_group(
 
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(broadcast_user_update(user, group))
 
     return group
 
@@ -360,7 +373,9 @@ async def leave_group(
     await session.delete(user_group)
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    broadcaster.revoke_user(group_id, user.id)
+
+    asyncio.create_task(broadcast_user_update(user, group))
     return {"detail": "Left group."}
 
 
@@ -383,7 +398,9 @@ async def delete_group(
     await session.execute(delete(Group).where(Group.id == group_id))
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    broadcaster.revoke_user(group_id, user.id)
+
+    asyncio.create_task(broadcast_user_update(user, group))
     return {"detail": "Deleted group."}
 
 
@@ -414,5 +431,7 @@ async def kick_user(
     await session.delete(target_membership)
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    broadcaster.revoke_user(group_id, user_id)
+
+    asyncio.create_task(broadcast_user_update(user, group))
     return {"detail": "Kicked user."}
