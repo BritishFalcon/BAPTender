@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
+  animator,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import { useBAPTender } from "@/context/BAPTenderContext";
@@ -136,6 +137,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
   const lastRenderRef = useRef<number>(0);
+  const animationUntilRef = useRef<number>(0);
 
   const currentThemeColors = useMemo(
     () => getThemeColorsFromCSS(),
@@ -322,6 +324,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
       opts.animations = { y: { from: 0, easing: "easeOutBounce", duration: 600 } };
       chartRef.current.update();
       opts.animations = {};
+      animationUntilRef.current = Date.now() + 600;
     } else {
       chartRef.current.update("none");
     }
@@ -340,6 +343,11 @@ export default function Graph({ currentThemeName }: GraphProps) {
       }
 
       const now = Date.now();
+
+      if (now < animationUntilRef.current || animator.running(chartRef.current)) {
+        frameId = requestAnimationFrame(updateFrame);
+        return;
+      }
 
       chartRef.current.data.datasets.forEach((ds: any) => {
         if (!ds.data || ds.data.length === 0) return;
