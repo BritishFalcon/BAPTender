@@ -119,7 +119,7 @@ export function BAPTenderProvider({
     const url = `${scheme}://${host}/api/realtime/events?token=${encodeURIComponent(token)}`;
     let es: EventSource | null = new EventSource(url);
 
-    es.onmessage = (event) => {
+    const handleEvent = (event: MessageEvent) => {
       setRawMessage(event.data);
       try {
         const data = JSON.parse(event.data);
@@ -148,6 +148,9 @@ export function BAPTenderProvider({
         console.error("SSE parse error", e, event.data);
       }
     };
+
+    es.onmessage = handleEvent;
+    es.addEventListener("update", handleEvent);
 
     es.addEventListener("revoke", () => {
       es?.close();
