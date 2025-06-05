@@ -20,7 +20,6 @@ export default function GroupsWidget() {
   const [myGroups, setMyGroups] = useState<GroupType[]>([]);
   const [publicGroups, setPublicGroups] = useState<GroupType[]>([]);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -240,7 +239,6 @@ export default function GroupsWidget() {
       });
       if (res.ok) {
         const data = await res.json();
-        setInviteToken(data.invite_token || null);
         const link = data.invite_token
           ? `${window.location.origin}/invite/${data.invite_token}`
           : data.invite_link;
@@ -395,7 +393,7 @@ export default function GroupsWidget() {
                           : "Generate Invite Link"}
                       </button>
                       {inviteLink && (
-                        <div className="space-y-[var(--tiny-spacing)] mt-[var(--small-spacing)]">
+                        <div className="mt-[var(--small-spacing)]">
                           <input
                             type="text"
                             readOnly
@@ -405,17 +403,6 @@ export default function GroupsWidget() {
                               (e.target as HTMLInputElement).select()
                             }
                           />
-                          {inviteToken && (
-                            <input
-                              type="text"
-                              readOnly
-                              value={inviteToken}
-                              className="themed-input text-xs p-[var(--small-spacing)] w-full"
-                              onClick={(e) =>
-                                (e.target as HTMLInputElement).select()
-                              }
-                            />
-                          )}
                         </div>
                       )}
                     </div>
