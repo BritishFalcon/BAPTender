@@ -9,7 +9,7 @@ class Group(Base):
     __tablename__ = "groups"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(length=50), unique=True, nullable=True)  # NULL = private group
+    name = Column(String(length=50), unique=True, nullable=False)
     public = Column(Boolean, default=False)
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

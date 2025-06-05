@@ -35,6 +35,11 @@ async def create_group(
     if group_data.name == "global":
         raise HTTPException(status_code=400, detail="Reserved group name")
 
+    # Ensure unique name
+    existing = await session.execute(select(Group).where(Group.name == group_data.name))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Group name already taken!")
+
     group = Group(
         name=group_data.name,
         public=group_data.public,
@@ -63,7 +68,7 @@ async def create_group(
         await session.commit()
     except IntegrityError:
         await session.rollback()
-        raise HTTPException(status_code=400, detail="Group name already exists.")
+        raise HTTPException(status_code=409, detail="Group name already taken!")
 
     asyncio.create_task(update_user(user, group))
 
