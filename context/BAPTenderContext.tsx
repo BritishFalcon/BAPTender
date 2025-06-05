@@ -114,9 +114,7 @@ export function BAPTenderProvider({
       return;
     }
 
-    const scheme = window.location.protocol === "https:" ? "https" : "http";
-    const host = window.location.host;
-    const url = `${scheme}://${host}/api/realtime/events?token=${encodeURIComponent(token)}`;
+    const url = `/api/realtime/events?token=${encodeURIComponent(token)}`;
     let es: EventSource | null = new EventSource(url);
 
     const handleEvent = (event: MessageEvent) => {
@@ -173,9 +171,7 @@ export function BAPTenderProvider({
     }
     const fetchState = async () => {
       try {
-        const scheme = window.location.protocol === "https:" ? "https" : "http";
-        const host = window.location.host;
-        const stateUrl = `${scheme}://${host}/api/realtime/state?token=${encodeURIComponent(token)}`;
+        const stateUrl = `/api/realtime/state?token=${encodeURIComponent(token)}`;
         const response = await fetch(stateUrl);
         if (response.ok) {
           const data = await response.json();

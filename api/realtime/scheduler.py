@@ -11,6 +11,7 @@ from api.drinks.models import Drink, ArchivedDrink
 from api.core.db import get_async_session
 from api.realtime.calculations import drinks_to_bac
 from api.realtime.router import broadcast_user_update
+from api.realtime.utils import get_active_group_ws
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -86,7 +87,8 @@ async def archive_if_sober(user_id: uuid.UUID):
         await session.commit()
 
     # 6. Push an update for the applicable users
-    asyncio.create_task(broadcast_user_update(user_id))
+    group = await get_active_group_ws(user.id)
+    asyncio.create_task(broadcast_user_update(user, group))
 
 
 async def schedule_archive(user_id: uuid.UUID, task_time: datetime):
