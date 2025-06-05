@@ -207,7 +207,12 @@ export default function AccountWidget() {
                 minHeight: compactSize,
                 padding: 'var(--tiny-spacing)',
               }
-            : { minWidth: '150px', padding: 'var(--small-spacing)' }
+            : {
+                minWidth: '150px',
+                height: compactSize,
+                minHeight: compactSize,
+                padding: 'var(--small-spacing)',
+              }
         }
         title={
           showIconOnly
@@ -228,7 +233,8 @@ export default function AccountWidget() {
 
       {expanded && (
         <div
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-[var(--small-spacing)] sm:min-w-[320px] sm:w-auto sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-[var(--small-spacing)] sm:min-w-[320px] sm:w-auto sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50 overflow-y-auto"
+          style={{ maxHeight: 'calc(100vh - 2rem)' }}
         >
           <div className="flex justify-between items-center mb-[var(--base-spacing)]">
             <h2
