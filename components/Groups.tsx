@@ -166,6 +166,12 @@ export default function GroupsWidget() {
       displayFeedback("error", "You're not logged in.");
       return;
     }
+
+    if (!newGroupName.trim()) {
+      displayFeedback("error", "Group name is required.");
+      return;
+    }
+
     setLoadingAction("create");
 
     try {
@@ -176,7 +182,7 @@ export default function GroupsWidget() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: newGroupName || null,
+          name: newGroupName.trim(),
           public: newGroupPublic,
         }),
       });
@@ -184,8 +190,13 @@ export default function GroupsWidget() {
         displayFeedback("success", "Group created!");
         window.location.reload();
       } else {
-        const error = await res.json().catch(() => ({ detail: "Unknown error." }));
-        displayFeedback("error", `Failed to create group: ${error.detail}`);
+        const error = await res
+          .json()
+          .catch(() => ({ detail: "Unknown error." }));
+        if (res.status === 409) {
+          displayFeedback("error", "Group name already taken!");
+        } else {
+          displayFeedback("error", `Failed to create group: ${error.detail}`);
       }
     } catch (err) {
       console.error("Error creating group", err);
@@ -423,7 +434,7 @@ export default function GroupsWidget() {
               <div className="space-y-[var(--small-spacing)] text-sm">
                 <input
                   type="text"
-                  placeholder="Group name (optional)"
+                  placeholder="Group name"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   className="themed-input text-xs p-[var(--small-spacing)] w-full"
@@ -438,7 +449,7 @@ export default function GroupsWidget() {
                 </label>
                 <button
                   onClick={handleCreateGroup}
-                  disabled={!!loadingAction}
+                  disabled={!!loadingAction || !newGroupName.trim()}
                   className="themed-button text-xs py-[var(--tiny-spacing)] px-[var(--small-spacing)] w-full"
                 >
                   {loadingAction === "create" ? "Creating..." : "Create"}

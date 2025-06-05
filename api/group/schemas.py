@@ -5,7 +5,7 @@ from typing import Optional
 
 
 class GroupBase(BaseModel):
-    name: Optional[str] = Field(None, max_length=50)
+    name: str = Field(..., min_length=1, max_length=50)
     public: bool = False
 
 
