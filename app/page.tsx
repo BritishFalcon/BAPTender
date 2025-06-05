@@ -6,9 +6,11 @@ import AuthGate from "@/components/AuthGate";
 import Header from "@/components/Header";
 import dynamic from "next/dynamic";
 const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
+const ParticlesBg = dynamic(() => import("@/components/ParticlesBackground"), {
+  ssr: false,
+});
 import UserBACStatusTable from "@/components/Table";
 import DrinksForm from "@/components/Drinks";
-import ParticlesBackground from "@/components/ParticlesBackground";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
 
@@ -76,7 +78,7 @@ export default function HomePage() {
       // Apply the default/current theme even to the loading screen for consistency
       <div className={`${themes[currentThemeIndex]} flex items-center justify-center min-h-screen bg-bg-color text-text-color`}>
         {/* Particle background can also be here if desired during loading */}
-        <CustomParticlesBackground currentTheme={themes[currentThemeIndex]} />
+        <ParticlesBg currentTheme={themes[currentThemeIndex]} />
         <p className="text-2xl font-sharetech animate-pulse relative z-10">Verifying Session...</p>
       </div>
     );
@@ -87,7 +89,7 @@ export default function HomePage() {
   if (!token) { // If token is null after loading and verification attempt
     return (
       <div className={currentThemeName}>
-        <CustomParticlesBackground currentTheme={currentThemeName} />
+        <ParticlesBg currentTheme={currentThemeName} />
         <main className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
           <h1
             className="glitch text-5xl md:text-7xl mb-2 font-vt323 cursor-pointer"
@@ -113,7 +115,7 @@ export default function HomePage() {
 return (
   <BAPTenderProvider token={token}>
     <div className={currentThemeName}>
-      <CustomParticlesBackground currentTheme={currentThemeName} />
+      <ParticlesBg currentTheme={currentThemeName} />
       <div className="min-h-screen flex flex-col relative z-10">
         <Header onThemeToggle={toggleTheme} currentThemeName={currentThemeName}/>
 
@@ -150,16 +152,3 @@ return (
   </BAPTenderProvider>
 );
 }
-
-// Renamed ParticlesBackground to CustomParticlesBackground to avoid naming conflict if any
-// Make sure the component file is also named CustomParticlesBackground.tsx
-// or adjust the import name here. For this example, I'm assuming you renamed it.
-const CustomParticlesBackground = ({ currentTheme }: { currentTheme: string }) => {
-  // If ParticlesBackground is in a separate file, ensure it's imported correctly
-  // For brevity, I'm not including its full code here again, but it's the
-  // working version you confirmed from '@tsparticles/react'.
-  if (typeof window !== "undefined") { // Ensure it only renders client-side
-    return <ParticlesBackground currentTheme={currentTheme} />;
-  }
-  return null;
-};
