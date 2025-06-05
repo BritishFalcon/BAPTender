@@ -335,11 +335,7 @@ export default function GroupsWidget() {
         // Adjusted width: min-content, max-w-sm for mobile, md:max-w-md for larger.
         // Increased max-h slightly, adjusted padding for less claustrophobia.
         <div
-          className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-[var(--small-spacing)]
-                         w-[90vw] max-w-sm sm:left-0 sm:translate-x-0 sm:right-auto
-                         sm:min-w-[300px] sm:w-auto sm:max-w-md md:max-w-lg
-                         max-h-[150vh] overflow-y-auto
-                         themed-card p-[var(--small-spacing)] md:p-[var(--base-spacing)] shadow-2xl"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm sm:absolute sm:top-full sm:left-0 sm:translate-x-0 sm:translate-y-0 sm:mt-[var(--small-spacing)] sm:w-auto sm:min-w-[300px] sm:max-w-md md:max-w-lg max-h-[150vh] overflow-y-auto themed-card p-[var(--small-spacing)] md:p-[var(--base-spacing)] shadow-2xl"
         >
           <div className="flex justify-between items-center mb-[var(--base-spacing)]">
             {" "}

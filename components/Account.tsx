@@ -213,7 +213,7 @@ export default function AccountWidget() {
 
       {expanded && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 mt-[var(--small-spacing)] w-[90vw] max-w-sm sm:left-auto sm:translate-x-0 sm:right-0 sm:min-w-[320px] sm:w-auto sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-[var(--small-spacing)] sm:min-w-[320px] sm:w-auto sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50"
         >
           <div className="flex justify-between items-center mb-[var(--base-spacing)]">
             <h2
