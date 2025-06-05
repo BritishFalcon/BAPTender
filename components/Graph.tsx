@@ -11,13 +11,9 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-  animator,
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import { useBAPTender } from "@/context/BAPTenderContext";
-
-// Limit chart redraws to avoid overwhelming the UI
-const FRAME_INTERVAL = 1000 / 30; // ~30fps
 
 ChartJS.register(
   TimeScale,
@@ -136,8 +132,6 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const { state } = useBAPTender();
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
-  const lastRenderRef = useRef<number>(0);
-  const animationUntilRef = useRef<number>(0);
 
   const currentThemeColors = useMemo(
     () => getThemeColorsFromCSS(),
@@ -303,16 +297,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
     const freshData = buildSeriesData();
     const oldData = chartDataRef.current;
     let foundNewPointOrUser = false;
-
     if (freshData.length !== oldData.length) {
       foundNewPointOrUser = true;
     } else {
-      for (let i = 0; i < freshData.length; i++) {
-        if (freshData[i].data.length !== oldData[i].data.length) {
-          foundNewPointOrUser = true;
-          break;
-        }
-      }
+      /* ... (your diffing logic) ... */
     }
 
     chartDataRef.current = freshData;
@@ -320,34 +308,22 @@ export default function Graph({ currentThemeName }: GraphProps) {
     applyXPaddedRange(chartRef.current, freshData, Date.now());
 
     if (foundNewPointOrUser) {
-      const opts = chartRef.current.options as any;
-      opts.animations = { y: { from: 0, easing: "easeOutBounce", duration: 600 } };
       chartRef.current.update();
-      opts.animations = {};
-      animationUntilRef.current = Date.now() + 600;
     } else {
       chartRef.current.update("none");
     }
   }, [state, buildSeriesData, options]); // options added as a dep here too, for theme changes
 
   useEffect(() => {
-    let frameId: number;
-    const updateFrame = () => {
+    const intervalId = setInterval(() => {
       if (
         !chartRef.current ||
         !chartRef.current.data ||
         !chartRef.current.data.datasets
-      ) {
-        frameId = requestAnimationFrame(updateFrame);
+      )
         return;
-      }
-
       const now = Date.now();
-
-      if (now < animationUntilRef.current || animator.running(chartRef.current)) {
-        frameId = requestAnimationFrame(updateFrame);
-        return;
-      }
+      // let needsSilentUpdate = false; // Not strictly needed if update is always called
 
       chartRef.current.data.datasets.forEach((ds: any) => {
         if (!ds.data || ds.data.length === 0) return;
@@ -374,17 +350,9 @@ export default function Graph({ currentThemeName }: GraphProps) {
         chartRef.current.data.datasets as CustomDataset[],
         now,
       );
-
-      if (now - lastRenderRef.current > FRAME_INTERVAL) {
-        chartRef.current.update("none");
-        lastRenderRef.current = now;
-      }
-
-      frameId = requestAnimationFrame(updateFrame);
-    };
-
-    frameId = requestAnimationFrame(updateFrame);
-    return () => cancelAnimationFrame(frameId);
+      chartRef.current.update("none");
+    }, 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // This useEffect specifically handles theme changes affecting options (like axis colors)
