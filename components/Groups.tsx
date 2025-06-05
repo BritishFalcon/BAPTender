@@ -2,6 +2,30 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
+import useWindowWidth from "@/hooks/useWindowWidth";
+import { usePopup } from "@/context/PopupContext";
+
+const UsersIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15 19.128V19.125a4.125 4.125 0 00-.786-2.47M15 19.128c0 .036-.001.071-.001.107C13.137 20.355 10.957 21 8.625 21c-2.331 0-4.514-.645-6.374-1.766a.375.375 0 01-.001-.109c0-3.52 2.854-6.375 6.375-6.375 2.408 0 4.504 1.335 5.589 3.305M15 19.128c.833.242 1.714.372 2.625.372 1.479 0 2.878-.342 4.122-.952a.376.376 0 00.003-.173c0-2.278-1.847-4.125-4.125-4.125-.92 0-2.171.716-2.914 1.806"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM20.25 8.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+    />
+  </svg>
+);
 
 type GroupType = { id: string; name: string; public: boolean };
 type GroupMember = {
@@ -15,8 +39,17 @@ export default function GroupsWidget() {
   const { state } = useBAPTender();
   const currentGroup: GroupType | null = state.group?.id ? state.group : null;
   const currentMembers: GroupMember[] = state.members || [];
+  const windowWidth = useWindowWidth();
+  const showIconOnly = windowWidth < 480;
+  const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (activePopup !== "groups") {
+      setExpanded(false);
+    }
+  }, [activePopup]);
   const [myGroups, setMyGroups] = useState<GroupType[]>([]);
   const [publicGroups, setPublicGroups] = useState<GroupType[]>([]);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -196,7 +229,11 @@ export default function GroupsWidget() {
         if (res.status === 409) {
           displayFeedback("error", "Group name already taken!");
         } else {
-          displayFeedback("error", `Failed to create group: ${error.detail}`);
+          displayFeedback(
+            "error",
+            `Failed to create group: ${error.detail}`,
+          );
+        }
       }
     } catch (err) {
       console.error("Error creating group", err);
@@ -265,17 +302,28 @@ export default function GroupsWidget() {
   return (
     <div className="relative font-sharetech">
       <button
-        onClick={() => setExpanded((prev) => !prev)}
-        className="themed-button text-sm p-[var(--small-spacing)] min-w-[80px] md:min-w-[80px] text-left leading-tight" // Adjusted padding & leading
+        onClick={() => {
+          const next = !expanded;
+          setExpanded(next);
+          setActivePopup(next ? "groups" : null);
+        }}
+        className="themed-button text-sm p-[var(--small-spacing)] min-w-[80px] md:min-w-[80px] flex items-center justify-center text-left leading-tight"
+        title={
+          showIconOnly && currentGroup?.name
+            ? `${currentGroup.name} (${currentGroup.public ? "Public" : "Private"})`
+            : undefined
+        }
       >
-        {currentGroup?.name ? (
+        {showIconOnly ? (
+          <UsersIcon />
+        ) : currentGroup?.name ? (
           <>
             <span className="font-semibold block truncate">
               {currentGroup.name}
             </span>
             <span className="text-xs italic opacity-80">
-              ({currentGroup.public ? "Public" : "Private"}){" "}
-              {currentMembers.length} Mbr(s)
+              ({currentGroup.public ? "Public" : "Private"}) {currentMembers.length}
+              {" "}Mbr(s)
             </span>
           </>
         ) : (
@@ -287,8 +335,9 @@ export default function GroupsWidget() {
         // Adjusted width: min-content, max-w-sm for mobile, md:max-w-md for larger.
         // Increased max-h slightly, adjusted padding for less claustrophobia.
         <div
-          className="absolute z-50 top-full right-0 md:left-0 md:right-auto mt-[var(--small-spacing)]
-                         min-w-[300px] w-auto max-w-wd sm:max-w-md md:max-w-lg
+          className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-[var(--small-spacing)]
+                         w-[90vw] max-w-sm sm:left-0 sm:translate-x-0 sm:right-auto
+                         sm:min-w-[300px] sm:w-auto sm:max-w-md md:max-w-lg
                          max-h-[150vh] overflow-y-auto
                          themed-card p-[var(--small-spacing)] md:p-[var(--base-spacing)] shadow-2xl"
         >
@@ -302,7 +351,10 @@ export default function GroupsWidget() {
               Group Central
             </h2>
             <button
-              onClick={() => setExpanded(false)}
+              onClick={() => {
+                setExpanded(false);
+                setActivePopup(null);
+              }}
               className="text-sm hover:underline"
               style={{ color: "var(--text-color)" }}
             >

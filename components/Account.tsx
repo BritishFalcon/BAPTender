@@ -2,6 +2,30 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
+import useWindowWidth from "@/hooks/useWindowWidth";
+import { usePopup } from "@/context/PopupContext";
+
+const UserIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4.5 20.25a8.25 8.25 0 0115 0"
+    />
+  </svg>
+);
 
 const formatDateForInput = (dateString: string | Date): string => {
   if (!dateString) return "";
@@ -19,8 +43,17 @@ const formatDateForInput = (dateString: string | Date): string => {
 export default function AccountWidget() {
   const { state } = useBAPTender();
   const userFromContext = state.self;
+  const windowWidth = useWindowWidth();
+  const showIconOnly = windowWidth < 480;
+  const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (activePopup !== "account") {
+      setExpanded(false);
+    }
+  }, [activePopup]);
   // Initialize realDob as true and don't include it in editable form state if it's always true
   const [formData, setFormData] = useState({
     displayName: "",
@@ -115,6 +148,7 @@ export default function AccountWidget() {
           "Account details updated! Refreshing data...",
         );
         setExpanded(false);
+        setActivePopup(null);
       } else {
         let errorDetail = `Update failed (status ${response.status}).`;
         try {
@@ -153,19 +187,34 @@ export default function AccountWidget() {
     <div className="relative font-sharetech">
       <button
         onClick={() => {
-          setExpanded(!expanded);
-          if (!expanded) resetFormData();
+          const next = !expanded;
+          setExpanded(next);
+          setActivePopup(next ? "account" : null);
+          if (next) resetFormData();
         }}
-        className="themed-button text-sm p-[var(--small-spacing)]"
-        style={{ minWidth: "150px" }}
+        className="themed-button text-sm p-[var(--small-spacing)] flex items-center justify-center"
+        style={{ minWidth: showIconOnly ? "40px" : "150px" }}
+        title={
+          showIconOnly
+            ? userFromContext.displayName
+              ? `Hey, ${userFromContext.displayName}`
+              : "Account"
+            : undefined
+        }
       >
-        {userFromContext.displayName
-          ? `Hey, ${userFromContext.displayName}`
-          : "Account"}
+        {showIconOnly ? (
+          <UserIcon />
+        ) : userFromContext.displayName ? (
+          `Hey, ${userFromContext.displayName}`
+        ) : (
+          "Account"
+        )}
       </button>
 
       {expanded && (
-        <div className="absolute right-0 mt-[var(--small-spacing)] min-w-[320px] w-auto max-w-sm sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50">
+        <div
+          className="absolute left-1/2 -translate-x-1/2 mt-[var(--small-spacing)] w-[90vw] max-w-sm sm:left-auto sm:translate-x-0 sm:right-0 sm:min-w-[320px] sm:w-auto sm:max-w-md themed-card p-[var(--base-spacing)] shadow-2xl z-50"
+        >
           <div className="flex justify-between items-center mb-[var(--base-spacing)]">
             <h2
               className="text-xl font-bold font-vt323"
@@ -174,7 +223,10 @@ export default function AccountWidget() {
               Account Settings
             </h2>
             <button
-              onClick={() => setExpanded(false)}
+              onClick={() => {
+                setExpanded(false);
+                setActivePopup(null);
+              }}
               className="text-sm hover:underline"
               style={{ color: "var(--text-color)" }}
             >
