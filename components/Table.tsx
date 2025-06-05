@@ -5,7 +5,18 @@ import { useBAPTender } from "@/context/BAPTenderContext";
 
 export default function UserBACStatusTable() {
   const { state } = useBAPTender();
-  const now = new Date(); // Use a Date object from the start
+
+  // Avoid using the current time during the initial server render to prevent
+  // markup mismatches. We'll set it on the client after mount.
+  const [now, setNow] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  if (!now) {
+    return null;
+  }
 
   const tableData = Object.keys(state.states)
     .map((uid) => {
