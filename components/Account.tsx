@@ -44,7 +44,8 @@ export default function AccountWidget() {
   const { state } = useBAPTender();
   const userFromContext = state.self;
   const windowWidth = useWindowWidth();
-  const showIconOnly = windowWidth < 480;
+  // Switch to compact icon view a bit earlier so the widgets fit beside the logo
+  const showIconOnly = windowWidth < 640;
   const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);

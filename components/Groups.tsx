@@ -40,7 +40,8 @@ export default function GroupsWidget() {
   const currentGroup: GroupType | null = state.group?.id ? state.group : null;
   const currentMembers: GroupMember[] = state.members || [];
   const windowWidth = useWindowWidth();
-  const showIconOnly = windowWidth < 480;
+  // Switch to the icon view around the same breakpoint used for Account
+  const showIconOnly = windowWidth < 640;
   const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);
@@ -308,24 +309,12 @@ export default function GroupsWidget() {
           setActivePopup(next ? "groups" : null);
         }}
         className="themed-button text-sm p-[var(--small-spacing)] min-w-[80px] md:min-w-[80px] flex items-center justify-center text-left leading-tight"
-        title={
-          showIconOnly && currentGroup?.name
-            ? `${currentGroup.name} (${currentGroup.public ? "Public" : "Private"})`
-            : undefined
-        }
+        title={showIconOnly && currentGroup?.name ? currentGroup.name : undefined}
       >
         {showIconOnly ? (
           <UsersIcon />
         ) : currentGroup?.name ? (
-          <>
-            <span className="font-semibold block truncate">
-              {currentGroup.name}
-            </span>
-            <span className="text-xs italic opacity-80">
-              ({currentGroup.public ? "Public" : "Private"}) {currentMembers.length}
-              {" "}Mbr(s)
-            </span>
-          </>
+          <span className="font-semibold block truncate">{currentGroup.name}</span>
         ) : (
           <span>No Group</span>
         )}
