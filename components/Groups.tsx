@@ -195,7 +195,7 @@ export default function GroupsWidget() {
     );
   };
 
-  const handleCreateGroup = async () => {
+  const handleCreateGroup = async (): Promise<void> => {
     const token = getToken();
     if (!token) {
       displayFeedback("error", "You're not logged in.");
@@ -221,6 +221,7 @@ export default function GroupsWidget() {
           public: newGroupPublic,
         }),
       });
+
       if (res.ok) {
         displayFeedback("success", "Group created!");
         window.location.reload();
@@ -228,10 +229,14 @@ export default function GroupsWidget() {
         const error = await res
           .json()
           .catch(() => ({ detail: "Unknown error." }));
+
         if (res.status === 409) {
           displayFeedback("error", "Group name already taken!");
         } else {
-          displayFeedback("error", `Failed to create group: ${error.detail}`);
+          displayFeedback(
+            "error",
+            `Failed to create group: ${error.detail}`,
+          );
         }
       }
     } catch (err) {
