@@ -42,6 +42,7 @@ export default function GroupsWidget() {
   const windowWidth = useWindowWidth();
   // Switch to the icon view around the same breakpoint used for Account
   const showIconOnly = windowWidth < 640;
+  const compactSize = Math.max(40, Math.min(60, windowWidth / 8));
   const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);
@@ -308,7 +309,20 @@ export default function GroupsWidget() {
           setExpanded(next);
           setActivePopup(next ? "groups" : null);
         }}
-        className="themed-button text-sm p-[var(--small-spacing)] min-w-[80px] md:min-w-[80px] flex items-center justify-center text-left leading-tight"
+        className={`themed-button text-sm flex items-center justify-center text-left leading-tight ${
+          showIconOnly ? '' : 'p-[var(--small-spacing)]'
+        }`}
+        style={
+          showIconOnly
+            ? {
+                width: compactSize,
+                height: compactSize,
+                minWidth: compactSize,
+                minHeight: compactSize,
+                padding: 'var(--tiny-spacing)',
+              }
+            : { minWidth: '80px', padding: 'var(--small-spacing)' }
+        }
         title={showIconOnly && currentGroup?.name ? currentGroup.name : undefined}
       >
         {showIconOnly ? (

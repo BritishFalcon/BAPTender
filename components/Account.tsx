@@ -46,6 +46,8 @@ export default function AccountWidget() {
   const windowWidth = useWindowWidth();
   // Switch to compact icon view a bit earlier so the widgets fit beside the logo
   const showIconOnly = windowWidth < 640;
+  // Dynamic compact size so the button can shrink but stay square
+  const compactSize = Math.max(40, Math.min(60, windowWidth / 8));
   const { activePopup, setActivePopup } = usePopup();
 
   const [expanded, setExpanded] = useState(false);
@@ -193,8 +195,20 @@ export default function AccountWidget() {
           setActivePopup(next ? "account" : null);
           if (next) resetFormData();
         }}
-        className="themed-button text-sm p-[var(--small-spacing)] flex items-center justify-center"
-        style={{ minWidth: showIconOnly ? "40px" : "150px" }}
+        className={`themed-button text-sm flex items-center justify-center ${
+          showIconOnly ? '' : 'p-[var(--small-spacing)]'
+        }`}
+        style={
+          showIconOnly
+            ? {
+                width: compactSize,
+                height: compactSize,
+                minWidth: compactSize,
+                minHeight: compactSize,
+                padding: 'var(--tiny-spacing)',
+              }
+            : { minWidth: '150px', padding: 'var(--small-spacing)' }
+        }
         title={
           showIconOnly
             ? userFromContext.displayName
