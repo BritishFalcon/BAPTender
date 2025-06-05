@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BAPTenderProvider } from "@/context/BAPTenderContext";
+import { PopupProvider } from "@/context/PopupContext";
 import AuthGate from "@/components/AuthGate";
 import Header from "@/components/Header";
 import dynamic from "next/dynamic";
@@ -95,9 +96,10 @@ export default function HomePage() {
 
   if (!token) { // If token is null after loading and verification attempt
     return (
-      <div className={currentThemeName}>
-        <CustomParticlesBackground currentTheme={currentThemeName} />
-        <main className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
+      <PopupProvider>
+        <div className={currentThemeName}>
+          <CustomParticlesBackground currentTheme={currentThemeName} />
+          <main className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
           <h1
             className="glitch text-5xl md:text-7xl mb-2 font-vt323 cursor-pointer"
             data-text="BAPTender!"
@@ -117,19 +119,21 @@ export default function HomePage() {
               router.push(`/invite/${pending}`);
             }
           }} />
-        </main>
-      </div>
+          </main>
+        </div>
+      </PopupProvider>
     );
   }
 
   // Token is valid, render the authenticated app
 // Token is valid, render the authenticated app
 return (
-  <BAPTenderProvider token={token}>
-    <div className={currentThemeName}>
-      <CustomParticlesBackground currentTheme={currentThemeName} />
-      <div className="min-h-screen flex flex-col relative z-10">
-        <Header onThemeToggle={toggleTheme} currentThemeName={currentThemeName}/>
+  <PopupProvider>
+    <BAPTenderProvider token={token}>
+      <div className={currentThemeName}>
+        <CustomParticlesBackground currentTheme={currentThemeName} />
+        <div className="min-h-screen flex flex-col relative z-10">
+          <Header onThemeToggle={toggleTheme} currentThemeName={currentThemeName}/>
 
         {/* 👇 REFACTORED MAIN SECTION 👇 */}
         {/* We make the main container a flex column and apply a single gap to space out its direct children perfectly. */}
@@ -159,9 +163,10 @@ return (
             className="text-center px-4 py-0 font-vt323 text-xs text-accent-color border-t border-t-[var(--card-border-color)]">
           BAPTender - Always verify BAC with a calibrated breathalyzer.
         </footer>
+        </div>
       </div>
-    </div>
-  </BAPTenderProvider>
+    </BAPTenderProvider>
+  </PopupProvider>
 );
 }
 

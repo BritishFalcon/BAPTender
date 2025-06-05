@@ -3,6 +3,7 @@
 import React from "react";
 import GroupsWidget from "./Groups"; // Assuming this will be styled separately
 import AccountWidget from "./Account"; // Assuming this will be styled separately
+import useWindowWidth from "@/hooks/useWindowWidth";
 
 interface HeaderProps {
   onThemeToggle: () => void;
@@ -13,6 +14,15 @@ export default function Header({
   onThemeToggle,
   currentThemeName,
 }: HeaderProps) {
+  const windowWidth = useWindowWidth();
+  const logoClass =
+    windowWidth < 320
+      ? "text-xl"
+      : windowWidth < 360
+      ? "text-2xl"
+      : windowWidth < 420
+      ? "text-3xl"
+      : "text-4xl";
   return (
     <header
       className="p-[var(--base-spacing)] shadow-lg"
@@ -32,7 +42,7 @@ export default function Header({
         {/* This div is just for the logo itself. It won't grow or shrink. */}
         <div className="flex-shrink-0">
           <div
-            className="text-4xl cursor-pointer"
+            className={`${logoClass} cursor-pointer`}
             data-text="BAPTENDER"
             onClick={onThemeToggle}
             title={`Toggle Theme (Current: ${currentThemeName.replace("theme-", "")})`}
