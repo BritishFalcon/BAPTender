@@ -197,6 +197,7 @@ export default function GroupsWidget() {
           displayFeedback("error", "Group name already taken!");
         } else {
           displayFeedback("error", `Failed to create group: ${error.detail}`);
+        }
       }
     } catch (err) {
       console.error("Error creating group", err);

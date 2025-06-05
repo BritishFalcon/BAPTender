@@ -293,66 +293,59 @@ export default function Graph({ currentThemeName }: GraphProps) {
 
   useEffect(() => {
     if (!chartRef.current) return;
-    // console.log("Graph: State changed, rebuilding and updating datasets.");
     const freshData = buildSeriesData();
-    const oldData = chartDataRef.current;
-    let foundNewPointOrUser = false;
-    if (freshData.length !== oldData.length) {
-      foundNewPointOrUser = true;
-    } else {
-      /* ... (your diffing logic) ... */
-    }
-
     chartDataRef.current = freshData;
     chartRef.current.data.datasets = freshData;
     applyXPaddedRange(chartRef.current, freshData, Date.now());
-
-    if (foundNewPointOrUser) {
-      chartRef.current.update();
-    } else {
-      chartRef.current.update("none");
-    }
-  }, [state, buildSeriesData, options]); // options added as a dep here too, for theme changes
+    chartRef.current.update();
+  }, [state, buildSeriesData, options]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
+    const frameInterval = 1000 / 30;
+    let lastFrame = performance.now();
+    let animId: number;
+
+    const frame = (timestamp: number) => {
       if (
-        !chartRef.current ||
-        !chartRef.current.data ||
-        !chartRef.current.data.datasets
-      )
-        return;
-      const now = Date.now();
-      // let needsSilentUpdate = false; // Not strictly needed if update is always called
+        chartRef.current &&
+        chartRef.current.data &&
+        chartRef.current.data.datasets &&
+        timestamp - lastFrame >= frameInterval
+      ) {
+        const now = Date.now();
+        chartRef.current.data.datasets.forEach((ds: any) => {
+          if (!ds.data || ds.data.length === 0) return;
+          const currentNowPoint = ds.data[ds.data.length - 1];
+          const lastHistPoint =
+            ds.data.length > 1 ? ds.data[ds.data.length - 2] : currentNowPoint;
+          const hoursElapsed = Math.max(0, (now - lastHistPoint.x) / 3600000);
+          const newBAC = Math.max(0, lastHistPoint.y - 0.015 * hoursElapsed);
 
-      chartRef.current.data.datasets.forEach((ds: any) => {
-        if (!ds.data || ds.data.length === 0) return;
-        const currentNowPoint = ds.data[ds.data.length - 1];
-        const lastHistPoint =
-          ds.data.length > 1 ? ds.data[ds.data.length - 2] : currentNowPoint;
-        const hoursElapsed = Math.max(0, (now - lastHistPoint.x) / 3600000);
-        const newBAC = Math.max(0, lastHistPoint.y - 0.015 * hoursElapsed);
+          currentNowPoint.x = now;
+          currentNowPoint.y = newBAC;
 
-        currentNowPoint.x = now;
-        currentNowPoint.y = newBAC;
+          if (
+            newBAC <= 0 &&
+            lastHistPoint.y <= 0 &&
+            now - lastHistPoint.x > 10 * 60 * 1000
+          ) {
+            currentNowPoint.y = 0;
+          }
+        });
 
-        if (
-          newBAC <= 0 &&
-          lastHistPoint.y <= 0 &&
-          now - lastHistPoint.x > 10 * 60 * 1000
-        ) {
-          currentNowPoint.y = 0; // Keep at 0
-        }
-      });
+        applyXPaddedRange(
+          chartRef.current,
+          chartRef.current.data.datasets as CustomDataset[],
+          now,
+        );
+        chartRef.current.update("none");
+        lastFrame = timestamp;
+      }
+      animId = requestAnimationFrame(frame);
+    };
 
-      applyXPaddedRange(
-        chartRef.current,
-        chartRef.current.data.datasets as CustomDataset[],
-        now,
-      );
-      chartRef.current.update("none");
-    }, 1000);
-    return () => clearInterval(intervalId);
+    animId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(animId);
   }, []);
 
   // This useEffect specifically handles theme changes affecting options (like axis colors)
