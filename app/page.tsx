@@ -9,7 +9,9 @@ const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
 const ParticlesBg = dynamic(() => import("@/components/ParticlesBackground"), {
   ssr: false,
 });
-import UserBACStatusTable from "@/components/Table";
+const UserBACStatusTable = dynamic(() => import("@/components/Table"), {
+  ssr: false,
+});
 import DrinksForm from "@/components/Drinks";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
