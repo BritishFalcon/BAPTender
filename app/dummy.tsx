@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { BAPTenderProvider, useBAPTender } from "@/context/BAPTenderContext";
-import Graph from "@/components/Graph";
+import dynamic from "next/dynamic";
+const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
 
 // A simple component to show the context data on screen
 function BAPTenderDebugger() {
@@ -86,7 +87,7 @@ export default function DummyPage() {
           {/* Existing debug info */}
           <BAPTenderDebugger />
           {/* New graph addition */}
-          <Graph />
+          <Graph currentThemeName="theme-og" />
         </BAPTenderProvider>
       )}
     </div>

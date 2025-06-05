@@ -439,7 +439,7 @@ export default function GroupsWidget() {
                 </ul>
               ) : (
                 <p className="text-xs italic">
-                  You haven't joined or created any groups yet.
+                  You haven&apos;t joined or created any groups yet.
                 </p>
               )}
             </section>
@@ -496,7 +496,7 @@ export default function GroupsWidget() {
                     </ul>
                   ) : (
                     <p className="text-xs italic">
-                      No new public groups to join (or you're already a member
+                      No new public groups to join (or you&apos;re already a member
                       of all of them).
                     </p>
                   );
