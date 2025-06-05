@@ -11,10 +11,8 @@ from api.auth.auth import SECRET  #
 from api.auth.models import User  #
 from api.core.db import get_async_session  # To fetch session for group fetching
 
-# To avoid circular import, we might need to import update_user carefully or use a signaling mechanism.
-# For now, direct import, assuming it doesn't create circular dependency issues at runtime.
-# If it does, we'll need to refactor (e.g. pass a callback or use a background task).
-from api.realtime.router import update_user as trigger_realtime_update  #
+# Importing here avoids circular dependency issues when the realtime router imports UserManager
+from api.realtime.router import broadcast_user_update as trigger_realtime_update  #
 from api.realtime.utils import get_active_group_ws  #
 import asyncio  # For creating a task
 
