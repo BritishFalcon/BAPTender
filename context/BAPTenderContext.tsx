@@ -128,8 +128,13 @@ export function BAPTenderProvider({
         } else if (data.type === "update") {
           const { user_id_updated, profile, drinks, states } = data;
           setState((prev) => {
-            const newMembers = prev.members.map((m) => m.id === user_id_updated ? { ...m, ...profile } : m);
-            const newSelf = prev.self.id === user_id_updated ? { ...prev.self, ...profile } : prev.self;
+            const newMembers = prev.members.map((m) =>
+              m.id === user_id_updated ? { ...m, ...profile } : m,
+            );
+            const newSelf =
+              prev.self.id === user_id_updated
+                ? { ...prev.self, ...profile }
+                : prev.self;
             return {
               ...prev,
               self: newSelf,
@@ -156,6 +161,30 @@ export function BAPTenderProvider({
     return () => {
       es?.close();
     };
+  }, [token]);
+
+  // Fetch the initial state via REST to ensure state is populated even if SSE fails
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    const fetchState = async () => {
+      try {
+        const scheme = window.location.protocol === "https:" ? "https" : "http";
+        const host = window.location.host;
+        const stateUrl = `${scheme}://${host}/api/realtime/state?token=${encodeURIComponent(token)}`;
+        const response = await fetch(stateUrl);
+        if (response.ok) {
+          const data = await response.json();
+          setState(data);
+        } else {
+          console.error("Failed to fetch initial state", response.status);
+        }
+      } catch (err) {
+        console.error("Error fetching initial state", err);
+      }
+    };
+    fetchState();
   }, [token]);
 
   return (
