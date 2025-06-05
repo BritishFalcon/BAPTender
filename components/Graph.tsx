@@ -315,15 +315,18 @@ export default function Graph({ currentThemeName }: GraphProps) {
   }, [state, buildSeriesData, options]); // options added as a dep here too, for theme changes
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
+    let frameId: number;
+    const updateFrame = () => {
       if (
         !chartRef.current ||
         !chartRef.current.data ||
         !chartRef.current.data.datasets
-      )
+      ) {
+        frameId = requestAnimationFrame(updateFrame);
         return;
+      }
+
       const now = Date.now();
-      // let needsSilentUpdate = false; // Not strictly needed if update is always called
 
       chartRef.current.data.datasets.forEach((ds: any) => {
         if (!ds.data || ds.data.length === 0) return;
@@ -351,8 +354,12 @@ export default function Graph({ currentThemeName }: GraphProps) {
         now,
       );
       chartRef.current.update("none");
-    }, 1000);
-    return () => clearInterval(intervalId);
+
+      frameId = requestAnimationFrame(updateFrame);
+    };
+
+    frameId = requestAnimationFrame(updateFrame);
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   // This useEffect specifically handles theme changes affecting options (like axis colors)
