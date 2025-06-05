@@ -231,10 +231,7 @@ export default function GroupsWidget() {
         if (res.status === 409) {
           displayFeedback("error", "Group name already taken!");
         } else {
-          displayFeedback(
-            "error",
-            `Failed to create group: ${error.detail}`,
-          );
+          displayFeedback("error", `Failed to create group: ${error.detail}`);
         }
       }
     } catch (err) {
