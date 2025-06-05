@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { BAPTenderProvider } from "@/context/BAPTenderContext";
 import { PopupProvider } from "@/context/PopupContext";
 import AuthGate from "@/components/AuthGate";
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); // Start with loading true
   const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     const verifyTokenAndInitialize = async () => {
@@ -52,6 +54,13 @@ export default function HomePage() {
         setToken(null); // No token found
       }
       setLoading(false); // Verification attempt complete
+      if (storedToken && localStorage.getItem("pendingInvite")) {
+        const pending = localStorage.getItem("pendingInvite");
+        if (pending) {
+          localStorage.removeItem("pendingInvite");
+          router.push(`/invite/${pending}`);
+        }
+      }
     };
 
     verifyTokenAndInitialize();
@@ -104,6 +113,11 @@ export default function HomePage() {
           <AuthGate onLogin={(newToken) => {
             localStorage.setItem("token", newToken); // Ensure token is set on successful login via AuthGate
             setToken(newToken);
+            const pending = localStorage.getItem("pendingInvite");
+            if (pending) {
+              localStorage.removeItem("pendingInvite");
+              router.push(`/invite/${pending}`);
+            }
           }} />
           </main>
         </div>

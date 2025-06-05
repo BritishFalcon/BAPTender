@@ -191,7 +191,10 @@ async def invite_link(
         raise HTTPException(status_code=400, detail="Group is public. No invite link needed.")
 
     token = generate_invite_token(group_id)
-    return {"invite_link": f"{HOST_URL}/group/invite/{token}"}
+    return {
+        "invite_link": f"{HOST_URL}/invite/{token}",
+        "invite_token": token,
+    }
 
 
 # For public groups
@@ -234,21 +237,13 @@ async def join_group(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # Decode token
+    """Join a private group via invite token. If already a member, simply switch
+    to the group instead of erroring."""
+
     group_id = decode_invite_token(token)
     if not group_id:
         raise HTTPException(status_code=400, detail="Invalid token.")
 
-    # Check if user is already in group
-    result = await session.execute(
-        select(UserGroup)
-        .where(UserGroup.user_id == user.id, UserGroup.group_id == group_id)
-    )
-    existing = result.scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=400, detail="User is already a member.")
-
-    # Check if group is public
     group_result = await session.execute(select(Group).where(Group.id == group_id))
     group = group_result.scalar_one_or_none()
     if not group:
@@ -256,9 +251,33 @@ async def join_group(
     if group.public:
         raise HTTPException(status_code=400, detail="Group is public — no invite needed.")
 
-    # Join
-    user_group = UserGroup(user_id=user.id, group_id=group_id, active=True)
-    session.add(user_group)
+    result = await session.execute(
+        select(UserGroup).where(
+            UserGroup.user_id == user.id, UserGroup.group_id == group_id
+        )
+    )
+    existing = result.scalar_one_or_none()
+
+    # Deactivate all groups first
+    await session.execute(
+        update(UserGroup)
+        .where(UserGroup.user_id == user.id)
+        .values(active=False)
+        .execution_options(synchronize_session=False)
+    )
+
+    if existing:
+        # Already joined; just activate it
+        await session.execute(
+            update(UserGroup)
+            .where(UserGroup.user_id == user.id, UserGroup.group_id == group_id)
+            .values(active=True)
+            .execution_options(synchronize_session=False)
+        )
+    else:
+        # Join new group with active=True
+        session.add(UserGroup(user_id=user.id, group_id=group_id, active=True))
+
     await session.commit()
 
     asyncio.create_task(update_user(user, group))
