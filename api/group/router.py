@@ -191,7 +191,10 @@ async def invite_link(
         raise HTTPException(status_code=400, detail="Group is public. No invite link needed.")
 
     token = generate_invite_token(group_id)
-    return {"invite_link": f"{HOST_URL}/group/invite/{token}"}
+    return {
+        "invite_link": f"{HOST_URL}/invite/{token}",
+        "invite_token": token,
+    }
 
 
 # For public groups

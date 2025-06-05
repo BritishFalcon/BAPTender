@@ -20,6 +20,7 @@ export default function GroupsWidget() {
   const [myGroups, setMyGroups] = useState<GroupType[]>([]);
   const [publicGroups, setPublicGroups] = useState<GroupType[]>([]);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -197,6 +198,7 @@ export default function GroupsWidget() {
           displayFeedback("error", "Group name already taken!");
         } else {
           displayFeedback("error", `Failed to create group: ${error.detail}`);
+        }
       }
     } catch (err) {
       console.error("Error creating group", err);
@@ -238,7 +240,11 @@ export default function GroupsWidget() {
       });
       if (res.ok) {
         const data = await res.json();
-        setInviteLink(data.invite_link);
+        setInviteToken(data.invite_token || null);
+        const link = data.invite_token
+          ? `${window.location.origin}/invite/${data.invite_token}`
+          : data.invite_link;
+        setInviteLink(link);
         displayFeedback("success", "Invite link generated!");
       } else {
         const error = await res
@@ -389,15 +395,28 @@ export default function GroupsWidget() {
                           : "Generate Invite Link"}
                       </button>
                       {inviteLink && (
-                        <input
-                          type="text"
-                          readOnly
-                          value={inviteLink}
-                          className="themed-input text-xs p-[var(--small-spacing)] w-full mt-[var(--small-spacing)]"
-                          onClick={(e) =>
-                            (e.target as HTMLInputElement).select()
-                          }
-                        />
+                        <div className="space-y-[var(--tiny-spacing)] mt-[var(--small-spacing)]">
+                          <input
+                            type="text"
+                            readOnly
+                            value={inviteLink}
+                            className="themed-input text-xs p-[var(--small-spacing)] w-full"
+                            onClick={(e) =>
+                              (e.target as HTMLInputElement).select()
+                            }
+                          />
+                          {inviteToken && (
+                            <input
+                              type="text"
+                              readOnly
+                              value={inviteToken}
+                              className="themed-input text-xs p-[var(--small-spacing)] w-full"
+                              onClick={(e) =>
+                                (e.target as HTMLInputElement).select()
+                              }
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
