@@ -15,6 +15,9 @@ import {
 import "chartjs-adapter-date-fns";
 import { useBAPTender } from "@/context/BAPTenderContext";
 
+// Limit chart redraws to avoid overwhelming the UI
+const FRAME_INTERVAL = 1000 / 30; // ~30fps
+
 ChartJS.register(
   TimeScale,
   LinearScale,
@@ -132,6 +135,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const { state } = useBAPTender();
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
+  const lastRenderRef = useRef<number>(0);
 
   const currentThemeColors = useMemo(
     () => getThemeColorsFromCSS(),
@@ -297,10 +301,16 @@ export default function Graph({ currentThemeName }: GraphProps) {
     const freshData = buildSeriesData();
     const oldData = chartDataRef.current;
     let foundNewPointOrUser = false;
+
     if (freshData.length !== oldData.length) {
       foundNewPointOrUser = true;
     } else {
-      /* ... (your diffing logic) ... */
+      for (let i = 0; i < freshData.length; i++) {
+        if (freshData[i].data.length !== oldData[i].data.length) {
+          foundNewPointOrUser = true;
+          break;
+        }
+      }
     }
 
     chartDataRef.current = freshData;
@@ -308,7 +318,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
     applyXPaddedRange(chartRef.current, freshData, Date.now());
 
     if (foundNewPointOrUser) {
+      const opts = chartRef.current.options as any;
+      opts.animations = { y: { from: 0, easing: "easeOutBounce", duration: 600 } };
       chartRef.current.update();
+      opts.animations = {};
     } else {
       chartRef.current.update("none");
     }
@@ -353,7 +366,11 @@ export default function Graph({ currentThemeName }: GraphProps) {
         chartRef.current.data.datasets as CustomDataset[],
         now,
       );
-      chartRef.current.update("none");
+
+      if (now - lastRenderRef.current > FRAME_INTERVAL) {
+        chartRef.current.update("none");
+        lastRenderRef.current = now;
+      }
 
       frameId = requestAnimationFrame(updateFrame);
     };
