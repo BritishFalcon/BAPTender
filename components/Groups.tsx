@@ -166,10 +166,12 @@ export default function GroupsWidget() {
       displayFeedback("error", "You're not logged in.");
       return;
     }
+
     if (!newGroupName.trim()) {
       displayFeedback("error", "Group name is required.");
       return;
     }
+
     setLoadingAction("create");
 
     try {
@@ -195,7 +197,6 @@ export default function GroupsWidget() {
           displayFeedback("error", "Group name already taken!");
         } else {
           displayFeedback("error", `Failed to create group: ${error.detail}`);
-        }
       }
     } catch (err) {
       console.error("Error creating group", err);
