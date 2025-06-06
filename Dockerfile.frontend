@@ -4,17 +4,12 @@ COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
 
-# Pass backend URL at build time so Next.js rewrites are configured correctly
-ARG BACKEND_URL
-ENV BACKEND_URL=$BACKEND_URL
-
 RUN npm run build
 
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app .
 ENV NODE_ENV=production
-ENV BACKEND_URL=$BACKEND_URL
 ENV PORT=3000
 EXPOSE 3000
 CMD ["npm", "start"]

@@ -23,8 +23,7 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
 ## Docker Development
 
 You can also run the project using Docker. This will start the frontend, backend,
-PostgreSQL and a Redis instance using `docker-compose`. The compose file passes
-the correct `BACKEND_URL` so the frontend can communicate with the API.
+PostgreSQL and a Redis instance using `docker-compose`.
 
 The backend container waits for the database to become available before
 starting, so the stack should come up cleanly with a single command.
