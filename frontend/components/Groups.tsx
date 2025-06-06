@@ -87,10 +87,10 @@ export default function GroupsWidget() {
 
     try {
       const [myGroupsRes, publicGroupsRes] = await Promise.all([
-        fetch("/api/group/my/", {
+        fetch("/api/group/my", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("/api/group/public/", {
+        fetch("/api/group/public", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }),
       ]);
@@ -167,7 +167,7 @@ export default function GroupsWidget() {
 
   const handleSwitchGroup = (groupId: string) => {
     makeGroupApiCall(
-      `/api/group/switch/?group_id=${groupId}`,
+      `/api/group/switch?group_id=${groupId}`,
       "POST",
       groupId,
       `Switched active group!`,
@@ -177,7 +177,7 @@ export default function GroupsWidget() {
 
   const handleGoSolo = () => {
     makeGroupApiCall(
-      `/api/group/switch/`,
+      `/api/group/switch`,
       "POST",
       "goSolo",
       "You are now flying solo!",
@@ -187,7 +187,7 @@ export default function GroupsWidget() {
 
   const handleJoinPublicGroup = (groupId: string) => {
     makeGroupApiCall(
-      `/api/group/join/${groupId}/`,
+      `/api/group/join/${groupId}`,
       "POST",
       groupId,
       `Successfully joined and switched to group!`,
@@ -249,7 +249,7 @@ export default function GroupsWidget() {
       )
     ) {
       makeGroupApiCall(
-        `/api/group/leave/${groupId}/`,
+        `/api/group/leave/${groupId}`,
         "POST",
         groupId,
         "Successfully left group.",
@@ -269,7 +269,7 @@ export default function GroupsWidget() {
     }
     setLoadingAction(`invite-${currentGroup.id}`);
     try {
-      const res = await fetch(`/api/group/invite-link/${currentGroup.id}/`, {
+      const res = await fetch(`/api/group/invite-link/${currentGroup.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
