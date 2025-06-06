@@ -8,7 +8,7 @@
     "custom-server": "node server.js",
     "dev": "concurrently \"npm run custom-server\" \"npm run fastapi-dev\"",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
     "lint": "next lint"
   },
   "dependencies": {

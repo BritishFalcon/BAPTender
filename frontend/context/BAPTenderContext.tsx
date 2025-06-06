@@ -82,10 +82,7 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      console.log("No token, not initializing context.");
-      return;
-    }
+    if (!token) return;
 
     const initialize = async () => {
       try {
@@ -102,17 +99,13 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
         console.log("Provider: Set initial state", initialState);
 
         const selfId = initialState.self?.id;
-        if (!selfId) {
-          throw new Error("Initial state is missing self.id");
-        }
+        if (!selfId) throw new Error("Initial state is missing self.id");
 
         eventSourceRef.current?.close();
 
-        // --- THIS IS THE ONLY CHANGE ---
-        // We are now bypassing the Next.js /api proxy for the SSE connection
-        const url = `http://localhost:8000/realtime/stream/${selfId}?token=${encodeURIComponent(token)}`;
-        console.log(`Connecting EventSource directly to: ${url}`);
-        // --- END OF CHANGE ---
+        // --- CORRECTED LINE ---
+        const url = `/api/realtime/stream/${selfId}?token=${encodeURIComponent(token)}`;
+        // --- END CORRECTION ---
 
         const es = new EventSource(url);
         eventSourceRef.current = es;
