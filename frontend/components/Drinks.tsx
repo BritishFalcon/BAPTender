@@ -196,7 +196,7 @@ export default function DrinksForm() {
       <button
         type="button"
         onClick={handleRemoveLastDrink}
-        className="themed-button w-full font-vt323 text-lg"
+        className="themed-button-danger w-full font-vt323 text-sm py-1.5 mt-[var(--small-spacing)]"
       >
         Remove Last Drink
       </button>
