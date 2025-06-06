@@ -10,13 +10,11 @@ from api.drinks.schemas import DrinkCreate, DrinkRead
 from api.core.db import get_async_session
 from api.auth.models import User
 from api.group.models import Group
-from api.realtime.router import update_user
+from api.realtime.actions import update_user
 from api.realtime.scheduler import update_archival
 from api.group.deps import get_active_group
 
 router = APIRouter()
-
-# TODO: Pushing new information back to users on changes - also need for changing User info as this will impact BAC calculations
 
 
 @router.post("", response_model=DrinkRead)
@@ -42,7 +40,6 @@ async def delete_last_drink(
     user: User = Depends(update_last_seen_user),
     group: Group = Depends(get_active_group),
 ):
-    # Find the most recent drink by add_time
     result = await session.execute(
         select(Drink)
         .where(Drink.user_id == user.id)
