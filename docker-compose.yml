@@ -30,5 +30,10 @@ services:
     depends_on:
       - backend
 
+  redis:
+    ports:
+      - "6379:6379"
+    image: redis:latest
+
 volumes:
   db_data:
