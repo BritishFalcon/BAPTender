@@ -22,7 +22,7 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
 
 ## Docker Development
 
-1. Build and start the containers using docker compose:
+1. Build and start the containers using docker compose. The backend container will automatically wait for the database and Redis to become available:
    ```bash
    docker compose up --build
    ```
