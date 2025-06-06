@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from api.auth.models import User
-from api.core.db import redis_client
+from api.core.db import redis_client, get_async_session
 from api.drinks.models import Drink
 from api.group.models import Group, UserGroup
 from api.realtime.calculations import drinks_to_bac
@@ -18,12 +18,6 @@ async def update_user(user: User, group: Optional[Group]):
     Constructs a comprehensive update package and publishes it to the Redis
     channel of every user affected by the change (e.g., all members of a group).
     """
-    # This function is async, but doesn't create its own session.
-    # It assumes it will be called within a context that can provide one if needed,
-    # but for publishing to Redis, it doesn't need a session.
-    # The *caller* of this function is responsible for fetching the User/Group objects.
-    # Let's adjust it to fetch what it needs to ensure data is fresh.
-    from api.core.db import get_async_session
     async for session in get_async_session():
 
         profile_data = {
@@ -54,11 +48,19 @@ async def update_user(user: User, group: Optional[Group]):
         users_to_notify_ids = []
         if group:
             user_group_entries = await session.execute(
-                select(UserGroup.user_id).where(UserGroup.group_id == group.id)
+                select(UserGroup.user_id).where(
+                    UserGroup.group_id == group.id,
+                    UserGroup.active == True
+                )
             )
             users_to_notify_ids = user_group_entries.scalars().unique().all()
         else:
+            # If the user is solo, only notify them.
             users_to_notify_ids = [user.id]
+
+        if not users_to_notify_ids:
+            print(f"Update for user {user.id} occurred, but no active users found to notify.")
+            return
 
         update_message_json = json.dumps(update_message, default=str)
         for target_user_id in users_to_notify_ids:
