@@ -9,6 +9,40 @@ export default function DrinksForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const handleRemoveLastDrink = async () => {
+    setMessage(null);
+    setError(null);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication token is missing. Please log in again.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/drinks/last", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res
+          .json()
+          .catch(() => ({ detail: `Request failed with status ${res.status}` }));
+        setError(`Error: ${errorData.detail}`);
+        return;
+      }
+
+      setMessage("Last drink removed!");
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error("Error removing last drink:", err);
+      setError("Network hiccup while removing drink. Try again.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -158,6 +192,13 @@ export default function DrinksForm() {
       </div>
       <button type="submit" className="themed-button w-full font-vt323 text-lg">
         Log Drink
+      </button>
+      <button
+        type="button"
+        onClick={handleRemoveLastDrink}
+        className="themed-button w-full font-vt323 text-lg"
+      >
+        Remove Last Drink
       </button>
       {message && (
         <p
