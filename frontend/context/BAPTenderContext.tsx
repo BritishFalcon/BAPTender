@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 
 type UserType = {
   id: string;
@@ -22,7 +22,7 @@ type GroupType = {
 };
 
 type DrinkType = {
-  id: string;
+  id:string;
   nickname: string;
   volume: number;
   strength: number;
@@ -44,30 +44,15 @@ type UserStatesType = {
 
 type BAPTenderState = {
   self: UserType;
-  group: GroupType;
+  group: GroupType | null;
   drinks: UserDrinksType;
   states: UserStatesType;
   members: UserType[];
 };
 
 const defaultState: BAPTenderState = {
-  self: {
-    id: "",
-    displayName: "",
-    isOwner: false,
-    active: false,
-    email: "",
-    weight: -1,
-    gender: "",
-    height: -1,
-    dob: "",
-    realDob: false,
-  },
-  group: {
-    id: "",
-    name: "",
-    public: false,
-  },
+  self: { id: "", displayName: "", isOwner: false, active: false, email: "", weight: -1, gender: "", height: -1, dob: "", realDob: false },
+  group: null,
   drinks: {},
   states: {},
   members: [],
@@ -83,106 +68,103 @@ const BAPTenderContext = createContext<BAPTenderContextType>({
   rawMessage: "",
 });
 
-// Hook to consume the context
 export const useBAPTender = () => {
-  const context = useContext(BAPTenderContext);
-  if (!context) {
-    throw new Error("useBAPTender must be used within a BAPTenderProvider");
-  }
-  return context;
+    const context = useContext(BAPTenderContext);
+    if (!context) {
+        throw new Error("useBAPTender must be used within a BAPTenderProvider");
+    }
+    return context;
 };
 
-// Props now include `token`. We only open the WS if token is set.
-export function BAPTenderProvider({
-  children,
-  token,
-}: {
-  children: React.ReactNode;
-  token: string;
-}) {
+export function BAPTenderProvider({ children, token }: { children: React.ReactNode; token: string; }) {
   const [state, setState] = useState<BAPTenderState>(defaultState);
   const [rawMessage, setRawMessage] = useState<string>("");
-
-  // Log state changes for debugging
-  useEffect(() => {
-    console.log("BAPTenderContext state updated:", state);
-  }, [state]);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    // If there's no token yet, don't open the WebSocket
-    if (!token) {
-      console.log("No token yet, not opening WS");
-      return;
-    }
+    if (!token) return;
 
-    console.log("Opening WS with token:", token);
-    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsHost = window.location.host;
-    const wsUrl = `${wsScheme}://${wsHost}/api/realtime/ws?token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log("Provider WS connection opened");
-    };
-
-    ws.onmessage = (event) => {
-      console.log("Provider Received WS message raw:", event.data);
-      setRawMessage(event.data);
+    const initialize = async () => {
       try {
-        const data = JSON.parse(event.data);
-        console.log("Provider Parsed WS data:", data);
+        console.log("Fetching initial state...");
+        const res = await fetch("/api/realtime/initial-state", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-        if (data.type === "init") {
-          console.log("Provider: Setting state with init message");
-          // Replace entire state with incoming data
-          setState(data);
-        } else if (data.type === "update") {
-          console.log("Provider: Updating state with update message", data);
-          const { user_id_updated, profile, drinks, states } = data;
-        
-          setState((prev) => {
-            // Create a new members array with the updated user profile
-            const newMembers = prev.members.map((member) =>
-              member.id === user_id_updated ? { ...member, ...profile } : member
-            );
-
-            // Check if the updated user is the 'self' user
-            const newSelf = prev.self.id === user_id_updated
-              ? { ...prev.self, ...profile }
-              : prev.self;
-
-            return {
-              ...prev,
-              self: newSelf,
-              members: newMembers,
-              drinks: {
-                ...prev.drinks,
-                [user_id_updated]: drinks, // Use the correct key and data
-              },
-              states: {
-                ...prev.states,
-                [user_id_updated]: states, // Use the correct key and data
-              },
-            };
-          });
-        } else {
-          console.warn("Provider: Unknown message type:", data.type);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch initial state: ${res.status}`);
         }
+        const initialState: BAPTenderState = await res.json();
+        setState(initialState);
+        console.log("Provider: Set initial state", initialState);
+
+        const selfId = initialState.self?.id;
+        if (!selfId) throw new Error("Initial state is missing self.id");
+
+        eventSourceRef.current?.close();
+
+        // --- CORRECTED LINE ---
+        const url = `/api/realtime/stream/${selfId}?token=${encodeURIComponent(token)}`;
+        // --- END CORRECTION ---
+
+        const es = new EventSource(url);
+        eventSourceRef.current = es;
+
+        es.onopen = () => console.log("SSE connection opened and ready.");
+
+        es.onmessage = (event) => {
+          console.log("--> GENERIC 'onmessage' EVENT RECEIVED! Data:", event.data);
+          setRawMessage(event.data);
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "update") {
+              const { user_id_updated, profile, drinks, states } = data;
+
+              setState((prev) => {
+                const memberExists = prev.members.some(m => m.id === user_id_updated);
+                const newMembers = memberExists
+                  ? prev.members.map(member =>
+                      member.id === user_id_updated ? profile : member
+                    )
+                  : [...prev.members, profile];
+
+                const newState: BAPTenderState = {
+                  ...prev,
+                  self: prev.self.id === user_id_updated ? profile : prev.self,
+                  members: newMembers,
+                  drinks: {
+                    ...prev.drinks,
+                    [user_id_updated]: drinks,
+                  },
+                  states: {
+                    ...prev.states,
+                    [user_id_updated]: states,
+                  },
+                };
+                return newState;
+              });
+            }
+          } catch (error) {
+            console.error("Error parsing SSE message:", error, "Raw data:", event.data);
+          }
+        };
+
+        es.onerror = (err) => {
+          console.error("!!!!!!!! EventSource ERROR !!!!!!!!", err);
+          es.close();
+        };
+
       } catch (error) {
-        console.error("Provider: Error parsing WS message:", error, "Raw data:", event.data);
+        console.error("Failed to initialize BAPTender context:", error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("Provider WS error:", error);
-    };
-
-    ws.onclose = (event) => {
-      console.log("Provider WS closed:", event);
-    };
+    initialize();
 
     return () => {
-      ws.close();
+      console.log("Closing SSE connection.");
+      eventSourceRef.current?.close();
     };
   }, [token]);
 
