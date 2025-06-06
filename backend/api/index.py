@@ -36,8 +36,9 @@ app.include_router(group_router, prefix="/group", tags=["group"])
 app.include_router(realtime_router, prefix="/realtime", tags=["realtime"])
 
 origins = [
-    "http://localhost:3000",  # your frontend URL
-    "http://127.0.0.1:3000"
+    "http://localhost:3000",  # local dev
+    "http://127.0.0.1:3000",
+    "http://frontend:3000"  # docker compose service
 ]
 
 app.add_middleware(
