@@ -1,14 +1,11 @@
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.base import JobLookupError
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
 from api.auth.models import User
 from api.drinks.models import Drink, ArchivedDrink
-from api.group.models import Group, UserGroup
 from api.core.db import get_async_session
 from api.realtime.calculations import drinks_to_bac
 from api.realtime.actions import update_user
@@ -39,15 +36,7 @@ async def archive_if_sober(user_id: uuid.UUID):
 
         await session.commit()
 
-        ug_result = await session.execute(
-            select(UserGroup).options(selectinload(UserGroup.group)).where(
-                UserGroup.user_id == user.id,
-                UserGroup.active.is_(True),
-            )
-        )
-        user_group = ug_result.scalars().first()
-        active_group = user_group.group if user_group else None
-        await update_user(user, active_group)
+        await update_user(user)
 
 
 async def schedule_archive(user_id: uuid.UUID, task_time: datetime):

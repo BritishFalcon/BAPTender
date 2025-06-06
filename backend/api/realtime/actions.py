@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
-from typing import Optional, List
-from uuid import UUID
+from typing import List
+
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -13,12 +13,23 @@ from api.group.models import Group, UserGroup
 from api.realtime.calculations import drinks_to_bac
 
 
-async def update_user(user: User, group: Optional[Group]):
+async def update_user(user: User):
     """
     Constructs a comprehensive update package and publishes it to the Redis
     channel of every user affected by the change (e.g., all members of a group).
     """
     async for session in get_async_session():
+
+        ug_result = await session.execute(
+            select(UserGroup)
+            .options(selectinload(UserGroup.group))
+            .where(
+                UserGroup.user_id == user.id,
+                UserGroup.active.is_(True),
+            )
+        )
+        user_group = ug_result.scalars().first()
+        group = user_group.group if user_group else None
 
         profile_data = {
             "id": str(user.id), "displayName": user.display_name, "email": user.email,

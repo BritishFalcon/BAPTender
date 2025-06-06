@@ -63,7 +63,7 @@ async def create_group(
         await session.rollback()
         raise HTTPException(status_code=409, detail="Group name already taken!")
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(update_user(user))
 
     return group
 
@@ -101,7 +101,7 @@ async def switch_group(
         group = group_result.scalar_one_or_none()
 
     await session.commit()
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(update_user(user))
     return group
 
 
@@ -192,7 +192,7 @@ async def join_group_public(
     session.add(user_group)
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(update_user(user))
     return group
 
 
@@ -238,7 +238,7 @@ async def join_group(
         session.add(UserGroup(user_id=user.id, group_id=group_id, active=True))
 
     await session.commit()
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(update_user(user))
     return group
 
 
@@ -301,11 +301,11 @@ async def leave_group(
         await session.execute(delete(Group).where(Group.id == group_id))
         await session.commit()
         # No group to update anymore, but we can notify the user they are solo
-        asyncio.create_task(update_user(user, None))
+        asyncio.create_task(update_user(user))
         return {"detail": "Deleted group."}
 
     await session.delete(user_group)
     await session.commit()
 
-    asyncio.create_task(update_user(user, group))
+    asyncio.create_task(update_user(user))
     return {"detail": "Left group."}
