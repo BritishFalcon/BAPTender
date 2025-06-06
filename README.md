@@ -25,6 +25,17 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
    ```
    The frontend will run on `http://localhost:3000` and the API will run on `http://127.0.0.1:8000`.
 
+## Docker
+
+You can also run the project using Docker. Build the images and start the
+services with:
+
+```bash
+docker compose up --build
+```
+
+The backend container waits for the database to accept connections before starting the API server. The frontend will be available on `http://localhost:3000` and the backend on `http://localhost:8000`.
+
 ## Repository Structure
 
 - `backend/` – FastAPI backend code and database scripts
