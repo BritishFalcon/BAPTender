@@ -27,7 +27,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
     const join = async () => {
       setStatus("Joining group...");
       try {
-        const res = await fetch(`/api/group/invite/${inviteToken}/`, {
+        const res = await fetch(`/api/group/invite/${inviteToken}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         if (res.ok) {
