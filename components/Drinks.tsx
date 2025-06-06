@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export default function DrinksForm() {
   const [volume, setVolume] = useState("");
@@ -56,7 +57,7 @@ export default function DrinksForm() {
     try {
       // CORRECTED URL: Use /api/ (matching next.config.js source)
       // AND ensure trailing slash to match FastAPI endpoint structure
-      const res = await fetch("/api/drinks/", {
+      const res = await apiFetch("/api/drinks/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

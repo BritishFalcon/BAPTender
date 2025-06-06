@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { BAPTenderProvider } from "@/context/BAPTenderContext";
 import { PopupProvider } from "@/context/PopupContext";
@@ -30,7 +31,7 @@ export default function HomePage() {
           // Use /api/users/me (FastAPI Users default, usually no trailing slash for GET /me)
           // next.config.js with trailingSlash: true might normalize this to /api/users/me/
           // which FastAPI might redirect; GET redirects are usually fine.
-          const response = await fetch("/api/auth/authenticated-route", {
+          const response = await apiFetch("/api/auth/authenticated-route", {
             headers: {
               "Authorization": `Bearer ${storedToken}`,
             },

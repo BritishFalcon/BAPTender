@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export default function RegisterForm({
   onLogin,
@@ -52,7 +53,7 @@ export default function RegisterForm({
         real_dob: form.realDob,
       };
 
-      const res = await fetch("/api/auth/register", {
+      const res = await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -67,7 +68,7 @@ export default function RegisterForm({
       }
 
       // CORRECTED URL for login
-      const loginRes = await fetch("/api/auth/jwt/login", {
+      const loginRes = await apiFetch("/api/auth/jwt/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({

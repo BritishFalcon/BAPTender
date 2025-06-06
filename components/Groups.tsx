@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
 import useWindowWidth from "@/hooks/useWindowWidth";
 import { usePopup } from "@/context/PopupContext";
+import { apiFetch } from "@/lib/api";
 
 const UsersIcon = () => (
   <svg
@@ -87,10 +88,10 @@ export default function GroupsWidget() {
 
     try {
       const [myGroupsRes, publicGroupsRes] = await Promise.all([
-        fetch("/api/group/my/", {
+        apiFetch("/api/group/my/", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("/api/group/public/", {
+        apiFetch("/api/group/public/", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }),
       ]);
@@ -138,7 +139,7 @@ export default function GroupsWidget() {
     setLoadingAction(actionGroupId || "true_action");
 
     try {
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: method,
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -210,7 +211,7 @@ export default function GroupsWidget() {
     setLoadingAction("create");
 
     try {
-      const res = await fetch("/api/group/create", {
+      const res = await apiFetch("/api/group/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -269,7 +270,7 @@ export default function GroupsWidget() {
     }
     setLoadingAction(`invite-${currentGroup.id}`);
     try {
-      const res = await fetch(`/api/group/invite-link/${currentGroup.id}/`, {
+      const res = await apiFetch(`/api/group/invite-link/${currentGroup.id}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export default function LoginForm({
   onLogin,
@@ -17,7 +18,7 @@ export default function LoginForm({
 
     try {
       // CORRECTED URL
-      const res = await fetch("/api/auth/jwt/login", {
+      const res = await apiFetch("/api/auth/jwt/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username: email, password }),

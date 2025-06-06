@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
 import useWindowWidth from "@/hooks/useWindowWidth";
 import { usePopup } from "@/context/PopupContext";
+import { apiFetch } from "@/lib/api";
 
 const UserIcon = () => (
   <svg
@@ -131,7 +132,7 @@ export default function AccountWidget() {
     // console.log("Payload for PATCH /api/users/me:", JSON.stringify(payload));
 
     try {
-      const response = await fetch("/api/auth/users/me", {
+      const response = await apiFetch("/api/auth/users/me", {
         // NO TRAILING SLASH
         method: "PATCH",
         headers: {
