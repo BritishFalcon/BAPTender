@@ -4,29 +4,31 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
 
 ## Local Development
 
-1. Create a Python virtual environment and install the API dependencies:
+1. Create a Python virtual environment and install the API dependencies inside the `backend` folder:
    ```bash
+   cd backend
    python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
    ```
-2. Install the Node.js packages:
+2. Install the Node.js packages inside the `frontend` folder:
    ```bash
+   cd frontend
    npm install
    ```
-3. Start both the Next.js and FastAPI servers:
+3. Start the FastAPI and Next.js servers (each in its own terminal):
    ```bash
-   npm run dev
+   cd backend && uvicorn api.index:app --reload
+   ```
+   ```bash
+   cd frontend && npm run dev
    ```
    The frontend will run on `http://localhost:3000` and the API will run on `http://127.0.0.1:8000`.
 
 ## Repository Structure
 
-- `api/` – FastAPI backend code
-- `app/` – Next.js app directory
-- `components/` – React components
-- `context/` – React context providers
-- `db/` – database initialization scripts
+- `backend/` – FastAPI backend code and database scripts
+- `frontend/` – Next.js application
 
 ## License
 
