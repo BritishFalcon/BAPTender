@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]==0.30.6
-pydantic
+pydantic>=2
 sqlalchemy
 fastapi-users[sqlalchemy]
 asyncpg

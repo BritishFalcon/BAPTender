@@ -88,3 +88,17 @@ def test_drinks_to_bac_multiple_rates_and_invalid_rate():
     assert results["high"][-1]["bac"] == 0.0
     with pytest.raises(AssertionError):
         drinks_to_bac(drinks, user, metabolism_rates={"bad": 0.0})
+
+
+
+def test_get_total_body_water_and_widmark_factor():
+    from api.realtime.calculations import get_total_body_water, get_widmark_factor
+    tbw = get_total_body_water("male", age=30.0, height=180.0, weight=70.0)
+    expected_tbw = 2.447 - 0.09516 * 30.0 + 0.1074 * 180.0 + 0.3362 * 70.0
+    assert pytest.approx(expected_tbw, rel=1e-6) == tbw
+
+    assert get_widmark_factor("male") == 0.68
+    assert get_widmark_factor("female") == 0.55
+    with pytest.raises(AssertionError):
+        get_widmark_factor("other")
+
