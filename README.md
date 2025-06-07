@@ -16,6 +16,10 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
    cd frontend
    npm install
    ```
+   To run the frontend tests use:
+   ```bash
+   npm test
+   ```
 3. Start the FastAPI and Next.js servers (each in its own terminal):
    ```bash
    cd backend && uvicorn api.index:app --reload
@@ -40,6 +44,15 @@ The backend container waits for the database to accept connections before starti
 
 - `backend/` – FastAPI backend code and database scripts
 - `frontend/` – Next.js application
+
+## Running Tests
+
+Unit tests for the frontend components are written with Jest and React Testing Library.
+Run them from the `frontend` directory:
+
+```bash
+npm test
+```
 
 ## License
 
