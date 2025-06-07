@@ -45,6 +45,18 @@ docker compose up --build
 
 The backend container waits for the database to accept connections before starting the API server. The frontend will be available on `http://localhost:3000` and the backend on `http://localhost:8000`.
 
+## Testing
+
+Unit tests for the FastAPI backend live under `backend/tests`. Install the backend dependencies and the test extras then run `pytest`:
+
+```bash
+cd backend
+pip install -r requirements.txt pytest pytest-asyncio httpx asgi-lifespan
+pytest
+```
+
+The tests run against a temporary SQLite database and use a mocked Redis client, so no additional services are required.
+
 ## Repository Structure
 
 - `backend/` – FastAPI backend code and database scripts
