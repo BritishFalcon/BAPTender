@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt pytest pytest-asyncio httpx asgi-lifespan
+          pip install -r backend/requirements.txt pytest pytest-asyncio httpx asgi-lifespan aiosqlite
       - name: Run backend tests
         run: |
           cd backend
