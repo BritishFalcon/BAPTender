@@ -46,6 +46,9 @@ POSTGRES_PASSWORD=<db-password>
 POSTGRES_DB=<db-name>
 ```
 
+The `docker-compose.yml` file uses these values to build a
+`DATABASE_URL` that is passed to the backend service.
+
 Then build the images and start the services with:
 
 ```bash
