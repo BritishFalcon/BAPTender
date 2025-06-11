@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 
 type UserType = {
   id: string;
@@ -80,93 +80,118 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
   const [state, setState] = useState<BAPTenderState>(defaultState);
   const [rawMessage, setRawMessage] = useState<string>("");
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!token) return;
+  const fetchInitialState = useCallback(async () => {
+    console.log("Fetching initial state...");
+    const res = await fetch("/api/realtime/initial-state", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch initial state: ${res.status}`);
+    }
+    const initialState: BAPTenderState = await res.json();
+    setState(initialState);
+    console.log("Provider: Set initial state", initialState);
+    const selfId = initialState.self?.id;
+    if (!selfId) throw new Error("Initial state is missing self.id");
+    return selfId;
+  }, [token]);
 
-    const initialize = async () => {
+  const setupEventSource = useCallback((selfId: string) => {
+    eventSourceRef.current?.close();
+    const url = `/api/realtime/stream/${selfId}?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.onopen = () => {
+      console.log("SSE connection opened and ready.");
+    };
+
+    es.onmessage = (event) => {
+      console.log("--> GENERIC 'onmessage' EVENT RECEIVED! Data:", event.data);
+      setRawMessage(event.data);
       try {
-        console.log("Fetching initial state...");
-        const res = await fetch("/api/realtime/initial-state", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const data = JSON.parse(event.data);
 
-        if (!res.ok) {
-          throw new Error(`Failed to fetch initial state: ${res.status}`);
+        if (data.type === "update") {
+          const { user_id_updated, profile, drinks, states } = data;
+
+          setState((prev) => {
+            const memberExists = prev.members.some((m) => m.id === user_id_updated);
+            const newMembers = memberExists
+              ? prev.members.map((member) => (member.id === user_id_updated ? profile : member))
+              : [...prev.members, profile];
+
+            const newState: BAPTenderState = {
+              ...prev,
+              self: prev.self.id === user_id_updated ? profile : prev.self,
+              members: newMembers,
+              drinks: {
+                ...prev.drinks,
+                [user_id_updated]: drinks,
+              },
+              states: {
+                ...prev.states,
+                [user_id_updated]: states,
+              },
+            };
+            return newState;
+          });
         }
-        const initialState: BAPTenderState = await res.json();
-        setState(initialState);
-        console.log("Provider: Set initial state", initialState);
-
-        const selfId = initialState.self?.id;
-        if (!selfId) throw new Error("Initial state is missing self.id");
-
-        eventSourceRef.current?.close();
-
-        // --- CORRECTED LINE ---
-        const url = `/api/realtime/stream/${selfId}?token=${encodeURIComponent(token)}`;
-        // --- END CORRECTION ---
-
-        const es = new EventSource(url);
-        eventSourceRef.current = es;
-
-        es.onopen = () => console.log("SSE connection opened and ready.");
-
-        es.onmessage = (event) => {
-          console.log("--> GENERIC 'onmessage' EVENT RECEIVED! Data:", event.data);
-          setRawMessage(event.data);
-          try {
-            const data = JSON.parse(event.data);
-
-            if (data.type === "update") {
-              const { user_id_updated, profile, drinks, states } = data;
-
-              setState((prev) => {
-                const memberExists = prev.members.some(m => m.id === user_id_updated);
-                const newMembers = memberExists
-                  ? prev.members.map(member =>
-                      member.id === user_id_updated ? profile : member
-                    )
-                  : [...prev.members, profile];
-
-                const newState: BAPTenderState = {
-                  ...prev,
-                  self: prev.self.id === user_id_updated ? profile : prev.self,
-                  members: newMembers,
-                  drinks: {
-                    ...prev.drinks,
-                    [user_id_updated]: drinks,
-                  },
-                  states: {
-                    ...prev.states,
-                    [user_id_updated]: states,
-                  },
-                };
-                return newState;
-              });
-            }
-          } catch (error) {
-            console.error("Error parsing SSE message:", error, "Raw data:", event.data);
-          }
-        };
-
-        es.onerror = (err) => {
-          console.error("!!!!!!!! EventSource ERROR !!!!!!!!", err);
-          es.close();
-        };
-
       } catch (error) {
-        console.error("Failed to initialize BAPTender context:", error);
+        console.error("Error parsing SSE message:", error, "Raw data:", event.data);
       }
     };
 
-    initialize();
+    es.onerror = (err) => {
+      console.error("!!!!!!!! EventSource ERROR !!!!!!!!", err);
+      es.close();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      reconnectTimeoutRef.current = setTimeout(() => {
+        reinitialize();
+      }, 3000);
+    };
+  }, [token]);
 
+  const reinitialize = useCallback(async () => {
+    if (!token) return;
+    try {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      const selfId = await fetchInitialState();
+      setupEventSource(selfId);
+    } catch (error) {
+      console.error("Failed to initialize BAPTender context:", error);
+    }
+  }, [fetchInitialState, setupEventSource, token]);
+
+  useEffect(() => {
+    reinitialize();
     return () => {
       console.log("Closing SSE connection.");
       eventSourceRef.current?.close();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
     };
-  }, [token]);
+  }, [token, reinitialize]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        reinitialize();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [reinitialize]);
 
   return (
     <BAPTenderContext.Provider value={{ state, rawMessage }}>
