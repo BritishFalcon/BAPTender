@@ -8,3 +8,4 @@ apscheduler
 pyjwt
 redis
 sse-starlette
+python-dotenv
