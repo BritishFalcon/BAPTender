@@ -289,16 +289,44 @@ export default function Graph({ currentThemeName }: GraphProps) {
     applyXPaddedRange(chartRef.current, initialDatasets, Date.now());
     chartRef.current.data.datasets = initialDatasets;
     chartRef.current.update("none");
-  }, [buildSeriesData, options]); // Run when buildSeriesData or options change
+  }, []); // Run once on mount
+
+  const prevThemeRef = useRef(currentThemeName);
 
   useEffect(() => {
     if (!chartRef.current) return;
     const freshData = buildSeriesData();
-    chartDataRef.current = freshData;
-    chartRef.current.data.datasets = freshData;
-    applyXPaddedRange(chartRef.current, freshData, Date.now());
-    chartRef.current.update();
-  }, [state, buildSeriesData, options]);
+    const existing = chartRef.current.data.datasets as CustomDataset[];
+    const themeChanged = prevThemeRef.current !== currentThemeName;
+    prevThemeRef.current = currentThemeName;
+
+    const existingMap = new Map(existing.map((ds) => [ds.label, ds]));
+    const updatedDatasets: CustomDataset[] = [];
+
+    for (const newDs of freshData) {
+      const match = existingMap.get(newDs.label);
+      if (match) {
+        match.data = newDs.data;
+        match.borderColor = newDs.borderColor;
+        match.backgroundColor = newDs.backgroundColor;
+        match.fill = newDs.fill;
+        match.tension = newDs.tension;
+        match.pointRadius = newDs.pointRadius;
+        match.pointBackgroundColor = newDs.pointBackgroundColor;
+        match.borderWidth = newDs.borderWidth;
+        updatedDatasets.push(match);
+        existingMap.delete(newDs.label);
+      } else {
+        updatedDatasets.push(newDs);
+      }
+    }
+
+    chartDataRef.current = updatedDatasets;
+    chartRef.current.data.datasets = updatedDatasets;
+    applyXPaddedRange(chartRef.current, updatedDatasets, Date.now());
+    // Skip animation if we only changed theme-related properties
+    chartRef.current.update(themeChanged ? "none" : undefined);
+  }, [state, buildSeriesData, currentThemeName]);
 
   useEffect(() => {
     const frameInterval = 1000 / 30;
