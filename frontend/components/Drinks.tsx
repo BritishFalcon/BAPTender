@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useBAPTender } from "@/context/BAPTenderContext";
+import { calculateDrinkBAC, calculateCurrentBAC } from "@/utils/bac";
 
 export default function DrinksForm() {
   const [volume, setVolume] = useState("");
@@ -8,6 +10,40 @@ export default function DrinksForm() {
   const [nickname, setNickname] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bacAdd, setBacAdd] = useState<number | null>(null);
+  const [bacTotal, setBacTotal] = useState<number | null>(null);
+
+  const { state } = useBAPTender();
+
+  useEffect(() => {
+    const vol = Number(volume);
+    const str = Number(strength);
+    if (isNaN(vol) || vol <= 0 || isNaN(str) || str <= 0) {
+      setBacAdd(null);
+      setBacTotal(null);
+      return;
+    }
+    const user = state.self;
+    if (!user || user.weight <= 0) {
+      setBacAdd(null);
+      setBacTotal(null);
+      return;
+    }
+    const age = user.dob
+      ? (Date.now() - new Date(user.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+      : undefined;
+    const add = calculateDrinkBAC(
+      vol,
+      str / 100,
+      user.weight,
+      user.gender,
+      age,
+      user.height,
+    );
+    const current = calculateCurrentBAC(state.states[user.id]);
+    setBacAdd(add);
+    setBacTotal(current + add);
+  }, [volume, strength, state]);
 
   const handleRemoveLastDrink = async () => {
     setMessage(null);
@@ -190,6 +226,14 @@ export default function DrinksForm() {
           placeholder="Your liver's nemesis"
         />
       </div>
+      {bacAdd !== null && (
+        <p
+          className="text-sm font-sharetech"
+          style={{ color: "var(--accent-color)" }}
+        >
+          BAC impact: +{bacAdd.toFixed(3)}% (new BAC {(bacTotal ?? 0).toFixed(3)}%)
+        </p>
+      )}
       <button type="submit" className="themed-button w-full font-vt323 text-lg">
         Log Drink
       </button>
