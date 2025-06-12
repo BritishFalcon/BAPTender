@@ -20,6 +20,6 @@ afterEach(() => {
 it('renders table headers', async () => {
   render(<ManageDrinks />);
   await waitFor(() => expect(global.fetch).toHaveBeenCalled());
-  expect(screen.getByText(/Volume/i)).toBeInTheDocument();
-  expect(screen.getByText(/Strength/i)).toBeInTheDocument();
+  expect(screen.getByText('ML')).toBeInTheDocument();
+  expect(screen.getByText('%')).toBeInTheDocument();
 });

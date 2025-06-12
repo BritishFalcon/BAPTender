@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { usePopup } from "@/context/PopupContext";
 
 const EditIcon = () => (
   <svg
@@ -47,13 +48,14 @@ interface Drink {
 
 export default function ManageDrinks() {
   const [drinks, setDrinks] = useState<Drink[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Drink | null>(null);
   const [form, setForm] = useState<{ nickname: string; volume: string; strength: string }>({
     nickname: "",
     volume: "",
     strength: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const { activePopup, setActivePopup } = usePopup();
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -72,29 +74,38 @@ export default function ManageDrinks() {
     fetchDrinks();
   }, []);
 
+  useEffect(() => {
+    if (activePopup !== "drink-edit") {
+      setEditing(null);
+    }
+  }, [activePopup]);
+
   const startEdit = (drink: Drink) => {
-    setEditing(drink.id);
+    setEditing(drink);
     setForm({
       nickname: drink.nickname || "",
       volume: drink.volume.toString(),
       strength: (drink.strength * 100).toString(),
     });
+    setActivePopup("drink-edit");
   };
 
   const cancelEdit = () => {
     setEditing(null);
     setForm({ nickname: "", volume: "", strength: "" });
+    setActivePopup(null);
   };
 
-  const saveEdit = async (id: string) => {
+  const saveEdit = async () => {
     if (!token) return;
+    if (!editing) return;
     const payload = {
       nickname: form.nickname || null,
       volume: parseFloat(form.volume),
       strength: parseFloat(form.strength) / 100,
-      add_time: drinks.find((d) => d.id === id)?.add_time || new Date().toISOString(),
+      add_time: editing.add_time,
     };
-    const res = await fetch(`/api/drinks/${id}`, {
+    const res = await fetch(`/api/drinks/${editing.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
@@ -126,78 +137,45 @@ export default function ManageDrinks() {
         <p className="text-red-500 text-sm font-sharetech mb-2">{error}</p>
       )}
       <div className="overflow-y-auto max-h-64">
-        <table className="themed-table">
+        <table className="themed-table text-xs" style={{ maxWidth: '400px' }}>
           <thead>
             <tr>
+              <th scope="col" className="w-8"></th>
               <th scope="col">Time</th>
-              <th scope="col">Volume (ml)</th>
-              <th scope="col">Strength (%)</th>
+              <th scope="col">ML</th>
+              <th scope="col">%</th>
               <th scope="col">Title</th>
-              <th scope="col" className="w-24">
-                Actions
-              </th>
+              <th scope="col" className="w-8"></th>
             </tr>
           </thead>
           <tbody>
             {drinks.map((drink) => (
               <tr key={drink.id}>
-                {editing === drink.id ? (
-                  <>
-                    <td>{new Date(drink.add_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-                    <td>
-                      <input
-                        type="number"
-                        className="themed-input w-20"
-                        value={form.volume}
-                        onChange={(e) => setForm({ ...form, volume: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="themed-input w-20"
-                        value={form.strength}
-                        onChange={(e) => setForm({ ...form, strength: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="themed-input"
-                        value={form.nickname}
-                        onChange={(e) => setForm({ ...form, nickname: e.target.value })}
-                      />
-                    </td>
-                    <td className="flex gap-1">
-                      <button className="themed-button px-2" onClick={() => saveEdit(drink.id)}>
-                        Save
-                      </button>
-                      <button className="themed-button-danger px-2" onClick={cancelEdit}>
-                        Cancel
-                      </button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td>{new Date(drink.add_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-                    <td>{drink.volume}</td>
-                    <td>{(drink.strength * 100).toFixed(1)}</td>
-                    <td>{drink.nickname}</td>
-                    <td className="flex gap-1">
-                      <button className="themed-button px-2" onClick={() => startEdit(drink)}>
-                        <EditIcon />
-                      </button>
-                      <button className="themed-button-danger px-2" onClick={() => removeDrink(drink.id)}>
-                        <TrashIcon />
-                      </button>
-                    </td>
-                  </>
-                )}
+                <td>
+                  <button
+                    className="themed-button p-1 w-6 h-6 flex items-center justify-center"
+                    onClick={() => startEdit(drink)}
+                  >
+                    <EditIcon />
+                  </button>
+                </td>
+                <td>{new Date(drink.add_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                <td>{drink.volume}</td>
+                <td>{(drink.strength * 100).toFixed(1)}</td>
+                <td>{drink.nickname}</td>
+                <td>
+                  <button
+                    className="themed-button-danger p-1 w-6 h-6 flex items-center justify-center"
+                    onClick={() => removeDrink(drink.id)}
+                  >
+                    <TrashIcon />
+                  </button>
+                </td>
               </tr>
             ))}
             {drinks.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center py-2 font-sharetech">
+                <td colSpan={6} className="text-center py-2 font-sharetech">
                   No drinks logged.
                 </td>
               </tr>
@@ -205,6 +183,61 @@ export default function ManageDrinks() {
           </tbody>
         </table>
       </div>
+      {editing && activePopup === "drink-edit" && (
+        <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-xs themed-card p-[var(--small-spacing)] shadow-2xl">
+          <div className="flex justify-between items-center mb-[var(--base-spacing)]">
+            <h2 className="font-bold font-vt323" style={{ color: 'var(--accent-color)' }}>
+              Edit Drink
+            </h2>
+            <button onClick={cancelEdit} className="text-sm hover:underline" style={{ color: 'var(--text-color)' }}>
+              Close
+            </button>
+          </div>
+          <div className="space-y-[var(--small-spacing)] text-sm">
+            <div>
+              <label className="block text-xs mb-[var(--tiny-spacing)]" style={{ color: 'var(--accent-color)' }}>
+                ML
+              </label>
+              <input
+                type="number"
+                className="themed-input text-xs"
+                value={form.volume}
+                onChange={(e) => setForm({ ...form, volume: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs mb-[var(--tiny-spacing)]" style={{ color: 'var(--accent-color)' }}>
+                %
+              </label>
+              <input
+                type="number"
+                className="themed-input text-xs"
+                value={form.strength}
+                onChange={(e) => setForm({ ...form, strength: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs mb-[var(--tiny-spacing)]" style={{ color: 'var(--accent-color)' }}>
+                Title
+              </label>
+              <input
+                type="text"
+                className="themed-input text-xs"
+                value={form.nickname}
+                onChange={(e) => setForm({ ...form, nickname: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-between pt-[var(--small-spacing)]">
+              <button className="themed-button text-xs py-1 px-2" onClick={saveEdit}>
+                Save
+              </button>
+              <button className="themed-button-danger text-xs py-1 px-2" onClick={cancelEdit}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
