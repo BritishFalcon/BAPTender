@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-
-const MIN_WEIGHT = 10;
-const MAX_WEIGHT = 650;
-const MIN_HEIGHT = 100;
-const MAX_HEIGHT = 250;
+import {
+  MIN_WEIGHT,
+  MAX_WEIGHT,
+  MIN_HEIGHT,
+  MAX_HEIGHT,
+} from "@/config";
 
 export default function RegisterForm({
   onLogin,

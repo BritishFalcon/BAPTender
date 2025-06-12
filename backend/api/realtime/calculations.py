@@ -1,5 +1,14 @@
 from datetime import datetime, timedelta
 
+from api.config import (
+    MIN_WEIGHT,
+    MAX_WEIGHT,
+    MIN_HEIGHT,
+    MAX_HEIGHT,
+    MIN_AGE,
+    MAX_AGE,
+)
+
 ALCOHOL_DENSITY = 0.789  # g/mL
 DEFAULT_METABOLISM_RATE = 0.015  # BAC per hour
 
@@ -14,9 +23,15 @@ def get_total_body_water(gender: str, age: float, height: float, weight: float) 
     :return: TBW in liters.
     """
 
-    assert 10.0 < age <= 150.0, "Age must be greater than 0 and less than or equal to 150!"
-    assert 10.0 < height <= 250.0, "Height must be greater than 0 and less than or equal to 250!"
-    assert 50.0 < weight <= 635.0, "Weight must be greater than 0 and less than or equal to 635!"
+    assert MIN_AGE < age <= MAX_AGE, (
+        f"Age must be greater than {MIN_AGE} and less than or equal to {MAX_AGE}!"
+    )
+    assert MIN_HEIGHT < height <= MAX_HEIGHT, (
+        f"Height must be greater than {MIN_HEIGHT} and less than or equal to {MAX_HEIGHT}!"
+    )
+    assert MIN_WEIGHT < weight <= MAX_WEIGHT, (
+        f"Weight must be greater than {MIN_WEIGHT} and less than or equal to {MAX_WEIGHT}!"
+    )
 
     match gender.upper():
         case "MALE":
@@ -66,14 +81,20 @@ def get_bac(drink_ml: float, drink_strength: float, body_weight: float, gender: 
 
     assert drink_ml >= 0.0, "Drink volume must be >= 0!"
     assert 0.0 < drink_strength <= 1.0, "Drink strength must be between 0 and 1!"
-    assert 10.0 <= body_weight <= 635.0, "Body weight must be >10 and <= 635 kg!"
+    assert MIN_WEIGHT <= body_weight <= MAX_WEIGHT, (
+        f"Body weight must be >={MIN_WEIGHT} and <={MAX_WEIGHT} kg!"
+    )
     assert gender.upper() in ["MALE", "FEMALE"], "Gender must be either Male or Female!"
 
     alcohol_grams = drink_ml * drink_strength * ALCOHOL_DENSITY
 
     if height and age:
-        assert 10.0 <= age <= 150.0, "Age must be >10 and <= 150 years!"
-        assert 50.0 <= height <= 250.0, "Height must be >50 and <= 250 cm!"
+        assert MIN_AGE <= age <= MAX_AGE, (
+            f"Age must be >={MIN_AGE} and <={MAX_AGE} years!"
+        )
+        assert MIN_HEIGHT <= height <= MAX_HEIGHT, (
+            f"Height must be >={MIN_HEIGHT} and <={MAX_HEIGHT} cm!"
+        )
 
         tbw = get_total_body_water(gender, age, height, body_weight)
         bac = alcohol_grams / (tbw * 10)

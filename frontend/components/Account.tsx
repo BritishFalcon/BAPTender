@@ -4,6 +4,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
 import useWindowWidth from "@/hooks/useWindowWidth";
 import { usePopup } from "@/context/PopupContext";
+import {
+  MIN_WEIGHT,
+  MAX_WEIGHT,
+  MIN_HEIGHT,
+  MAX_HEIGHT,
+} from "@/config";
 
 const UserIcon = () => (
   <svg
@@ -118,10 +124,6 @@ export default function AccountWidget() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const MIN_WEIGHT = 10;
-  const MAX_WEIGHT = 650;
-  const MIN_HEIGHT = 100;
-  const MAX_HEIGHT = 250;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

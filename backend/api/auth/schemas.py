@@ -8,12 +8,22 @@ from pydantic import BaseModel, field_validator, constr, confloat, EmailStr, Fie
 from pydantic.json_schema import SkipJsonSchema
 from re import match
 
+from api.config import (
+    MIN_WEIGHT,
+    MAX_WEIGHT,
+    MIN_HEIGHT,
+    MAX_HEIGHT,
+    MIN_AGE,
+    MAX_AGE,
+)
+from api.utils import calculate_age
+
 
 class UserBase(BaseModel):
     display_name: constr(min_length=3, max_length=20, strict=True)
-    weight: confloat(ge=10.0, le=650.0, strict=True)
+    weight: confloat(ge=MIN_WEIGHT, le=MAX_WEIGHT, strict=True)
     gender: constr(strict=True)
-    height: Optional[confloat(ge=100.0, le=250.0, strict=True)] = None
+    height: Optional[confloat(ge=MIN_HEIGHT, le=MAX_HEIGHT, strict=True)] = None
     dob: date
     real_dob: bool
 
@@ -28,10 +38,11 @@ class UserBase(BaseModel):
     @field_validator("dob")
     @classmethod
     def validate_dob(cls, dob: date) -> date:
-        today = date.today()
-        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-        if not (10 <= age <= 150):
-            raise ValueError("Age must be between 10 and 150 years!")
+        age = calculate_age(dob)
+        if not (MIN_AGE <= age <= MAX_AGE):
+            raise ValueError(
+                f"Age must be between {MIN_AGE} and {MAX_AGE} years!"
+            )
         return dob
 
     @field_validator("gender")
@@ -58,9 +69,9 @@ class UserCreate(BaseUserCreate):
     email: EmailStr
     password: str
     display_name: constr(min_length=3, max_length=20, strict=True)
-    weight: confloat(ge=10.0, le=650.0, strict=True)
+    weight: confloat(ge=MIN_WEIGHT, le=MAX_WEIGHT, strict=True)
     gender: constr(strict=True)
-    height: Optional[confloat(ge=100.0, le=250.0, strict=True)]
+    height: Optional[confloat(ge=MIN_HEIGHT, le=MAX_HEIGHT, strict=True)]
     dob: date
     real_dob: bool
 
@@ -89,10 +100,11 @@ class UserUpdate(BaseUserUpdate):
     @field_validator("dob")
     @classmethod
     def validate_dob(cls, dob: date) -> date:
-        today = date.today()
-        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-        if not (10 <= age <= 150):
-            raise ValueError("Age must be between 10 and 150 years!")
+        age = calculate_age(dob)
+        if not (MIN_AGE <= age <= MAX_AGE):
+            raise ValueError(
+                f"Age must be between {MIN_AGE} and {MAX_AGE} years!"
+            )
         return dob
 
     @field_validator("gender")
