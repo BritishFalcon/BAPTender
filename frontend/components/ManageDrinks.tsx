@@ -186,7 +186,10 @@ export default function ManageDrinks() {
         </table>
       </div>
       {editing && activePopup === "drink-edit" && (
-        <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-xs themed-card p-[var(--small-spacing)] shadow-2xl">
+        <div
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-xs sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-[var(--small-spacing)] sm:w-auto sm:min-w-[300px] sm:max-w-sm themed-card p-[var(--small-spacing)] shadow-2xl overflow-y-auto"
+          style={{ maxHeight: "calc(100vh - 2rem)" }}
+        >
           <div className="flex justify-between items-center mb-[var(--base-spacing)]">
             <h2 className="font-bold font-vt323" style={{ color: 'var(--accent-color)' }}>
               Edit Drink
