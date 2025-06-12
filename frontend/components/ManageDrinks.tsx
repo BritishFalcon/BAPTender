@@ -2,6 +2,41 @@
 
 import React, { useEffect, useState } from "react";
 
+const EditIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    className="w-4 h-4"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M16.862 3.487a2.138 2.138 0 113.02 3.02L9.44 17.95l-4.328.767.767-4.327 10.983-10.903z"
+    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 20h14" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    className="w-4 h-4"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M6 7h12M10 11v6m4-6v6M9 7V4h6v3m-7 0v12a2 2 0 002 2h4a2 2 0 002-2V7"
+    />
+  </svg>
+);
+
 interface Drink {
   id: string;
   nickname: string | null;
@@ -150,10 +185,10 @@ export default function ManageDrinks() {
                     <td>{drink.nickname}</td>
                     <td className="flex gap-1">
                       <button className="themed-button px-2" onClick={() => startEdit(drink)}>
-                        Edit
+                        <EditIcon />
                       </button>
                       <button className="themed-button-danger px-2" onClick={() => removeDrink(drink.id)}>
-                        Delete
+                        <TrashIcon />
                       </button>
                     </td>
                   </>
