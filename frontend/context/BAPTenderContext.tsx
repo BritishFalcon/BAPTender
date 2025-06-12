@@ -80,6 +80,7 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
   const [state, setState] = useState<BAPTenderState>(defaultState);
   const [rawMessage, setRawMessage] = useState<string>("");
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -153,6 +154,7 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
         es.onerror = (err) => {
           console.error("!!!!!!!! EventSource ERROR !!!!!!!!", err);
           es.close();
+          scheduleReconnect();
         };
 
       } catch (error) {
@@ -160,10 +162,32 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
       }
     };
 
+    function scheduleReconnect() {
+      if (reconnectTimer.current) return;
+      reconnectTimer.current = setTimeout(() => {
+        reconnectTimer.current = null;
+        initialize();
+      }, 1000);
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        scheduleReconnect();
+      }
+    };
+
+    const handleFocus = () => scheduleReconnect();
+
     initialize();
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       console.log("Closing SSE connection.");
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       eventSourceRef.current?.close();
     };
   }, [token]);
