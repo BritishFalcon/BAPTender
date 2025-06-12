@@ -172,10 +172,12 @@ export default function Graph({ currentThemeName }: GraphProps) {
         continue;
       }
 
-      const historical = filtered.map((p: any) => ({
-        x: new Date(p.time).getTime(),
-        y: parseFloat(p.bac) || 0,
-      }));
+      const historical = filtered
+        .map((p: any) => ({
+          x: new Date(p.time).getTime(),
+          y: parseFloat(p.bac) || 0,
+        }))
+        .sort((a, b) => a.x - b.x);
 
       const lastHistPointForCalc =
         historical.length > 0
@@ -191,8 +193,8 @@ export default function Graph({ currentThemeName }: GraphProps) {
       );
 
       const currentDataPoints = historical.length > 0 ? [...historical] : [];
-      currentDataPoints.push({ x: now, y: realTimeBAC });
       currentDataPoints.sort((a, b) => a.x - b.x);
+      currentDataPoints.push({ x: now, y: realTimeBAC });
 
       const member = state.members.find((m: any) => m.id === uid);
       const label = member?.displayName || uid;
