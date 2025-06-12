@@ -41,3 +41,4 @@ backend/venv
 # pycharm
 .idea
 /.env
+/.env
