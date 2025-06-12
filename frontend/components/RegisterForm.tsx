@@ -6,6 +6,8 @@ import {
   MAX_WEIGHT,
   MIN_HEIGHT,
   MAX_HEIGHT,
+  MIN_AGE,
+  MAX_AGE,
 } from "@/config";
 
 export default function RegisterForm({
@@ -25,9 +27,21 @@ export default function RegisterForm({
   });
   const [error, setError] = useState<string | null>(null);
 
-  function updateField(field: string, value: any) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+function updateField(field: string, value: any) {
+  setForm((prev) => ({ ...prev, [field]: value }));
+}
+
+function calculateAge(dobString: string): number {
+  if (!dobString) return 0;
+  const dob = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
   }
+  return age;
+}
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +76,12 @@ export default function RegisterForm({
         setError(`Height must be between ${MIN_HEIGHT} and ${MAX_HEIGHT} cm.`);
         return;
       }
+    }
+
+    const age = calculateAge(form.dob);
+    if (age < MIN_AGE || age > MAX_AGE) {
+      setError(`Age must be between ${MIN_AGE} and ${MAX_AGE} years.`);
+      return;
     }
 
     try {

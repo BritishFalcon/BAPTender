@@ -9,6 +9,8 @@ import {
   MAX_WEIGHT,
   MIN_HEIGHT,
   MAX_HEIGHT,
+  MIN_AGE,
+  MAX_AGE,
 } from "@/config";
 
 const UserIcon = () => (
@@ -44,6 +46,18 @@ const formatDateForInput = (dateString: string | Date): string => {
   } catch (e) {
     return "";
   }
+};
+
+const calculateAge = (dobString: string): number => {
+  if (!dobString) return 0;
+  const dob = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
 };
 
 export default function AccountWidget() {
@@ -148,6 +162,16 @@ export default function AccountWidget() {
       displayLocalFeedback(
         "error",
         `Weight must be between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    const age = calculateAge(formData.dob);
+    if (age < MIN_AGE || age > MAX_AGE) {
+      displayLocalFeedback(
+        "error",
+        `Age must be between ${MIN_AGE} and ${MAX_AGE} years.`,
       );
       setIsSaving(false);
       return;

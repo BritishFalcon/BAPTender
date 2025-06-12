@@ -89,6 +89,28 @@ class UserUpdate(BaseUserUpdate):
     dob: Optional[date] = None
     real_dob: Optional[bool] = None
 
+    @field_validator("weight")
+    @classmethod
+    def validate_weight(cls, weight: float) -> float:
+        if weight is None:
+            return weight
+        if not (MIN_WEIGHT <= weight <= MAX_WEIGHT):
+            raise ValueError(
+                f"Weight must be between {MIN_WEIGHT} and {MAX_WEIGHT} kg!"
+            )
+        return weight
+
+    @field_validator("height")
+    @classmethod
+    def validate_height(cls, height: float) -> float:
+        if height is None:
+            return height
+        if not (MIN_HEIGHT <= height <= MAX_HEIGHT):
+            raise ValueError(
+                f"Height must be between {MIN_HEIGHT} and {MAX_HEIGHT} cm!"
+            )
+        return height
+
     @field_validator("display_name")
     @classmethod
     def validate_display_name(cls, v: str) -> str:
