@@ -13,6 +13,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="theme-og"> {/* Default theme */}
       <head>
         <Script
+          id="init-theme"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var themes = ['theme-og','theme-dark','theme-cyber','theme-neon'];
+                  var stored = localStorage.getItem('themeIndex');
+                  if (stored !== null) {
+                    var idx = parseInt(stored, 10);
+                    if (!isNaN(idx) && idx >= 0 && idx < themes.length) {
+                      document.documentElement.className = themes[idx];
+                    }
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+        <Script
           src="https://code.jquery.com/jquery-3.6.0.min.js"
           strategy="beforeInteractive"
         />
