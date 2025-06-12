@@ -132,7 +132,7 @@ export default function ManageDrinks() {
   };
 
   return (
-    <div>
+    <div className="relative font-sharetech">
       {error && (
         <p className="text-red-500 text-sm font-sharetech mb-2">{error}</p>
       )}
