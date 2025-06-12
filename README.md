@@ -36,8 +36,20 @@ BAPTender is a web application that combines a Next.js frontend with a FastAPI b
 
 ## Docker
 
-You can also run the project using Docker. Build the images and start the
-services with:
+You can also run the project using Docker. Create a `.env` file in the project
+root with the following variables:
+
+```
+SECRET=<your-secret>
+POSTGRES_USER=<db-user>
+POSTGRES_PASSWORD=<db-password>
+POSTGRES_DB=<db-name>
+```
+
+The `docker-compose.yml` file uses these values to build a
+`DATABASE_URL` that is passed to the backend service.
+
+Then build the images and start the services with:
 
 ```bash
 docker compose up --build
