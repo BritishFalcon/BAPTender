@@ -8,3 +8,6 @@ apscheduler
 pyjwt
 redis
 sse-starlette
+httpx
+asgi_lifespan
+aiosqlite

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  MutableRefObject,
+} from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -85,6 +91,7 @@ const applyXPaddedRange = (
   chart: ChartJS | null,
   datasets: CustomDataset[],
   currentTime: number,
+  rangeRef?: React.MutableRefObject<{ min: number | undefined; max: number | undefined }>,
 ) => {
   if (!chart || !chart.options.scales?.x) {
     // console.warn("applyXPaddedRange: Chart or x-axis not ready.");
@@ -121,6 +128,10 @@ const applyXPaddedRange = (
   // Directly modify the chart's options for min and max
   chart.options.scales.x.min = minVal;
   chart.options.scales.x.max = maxVal;
+  if (rangeRef) {
+    rangeRef.current.min = minVal;
+    rangeRef.current.max = maxVal;
+  }
   // console.log(`applyXPaddedRange: Applied X-Range: ${minVal} to ${maxVal}`);
 };
 
@@ -132,6 +143,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const { state } = useBAPTender();
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
+  const xRangeRef = useRef<{ min: number | undefined; max: number | undefined }>({
+    min: undefined,
+    max: undefined,
+  });
 
   const currentThemeColors = useMemo(
     () => getThemeColorsFromCSS(),
@@ -221,6 +236,8 @@ export default function Graph({ currentThemeName }: GraphProps) {
             tooltipFormat: "HH:mm, MMM d",
             displayFormats: { minute: "HH:mm", hour: "HH:mm" },
           },
+          min: xRangeRef.current.min,
+          max: xRangeRef.current.max,
           title: {
             display: true,
             text: "Time",
@@ -286,7 +303,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
     // Apply options which include themed colors BEFORE first data and range setting
     chartRef.current.options = options;
 
-    applyXPaddedRange(chartRef.current, initialDatasets, Date.now());
+    applyXPaddedRange(chartRef.current, initialDatasets, Date.now(), xRangeRef);
     chartRef.current.data.datasets = initialDatasets;
     chartRef.current.update("none");
   }, []); // Run once on mount
@@ -323,7 +340,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
 
     chartDataRef.current = updatedDatasets;
     chartRef.current.data.datasets = updatedDatasets;
-    applyXPaddedRange(chartRef.current, updatedDatasets, Date.now());
+    applyXPaddedRange(chartRef.current, updatedDatasets, Date.now(), xRangeRef);
     // Skip animation if we only changed theme-related properties
     chartRef.current.update(themeChanged ? "none" : undefined);
   }, [state, buildSeriesData, currentThemeName]);
@@ -365,6 +382,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
           chartRef.current,
           chartRef.current.data.datasets as CustomDataset[],
           now,
+          xRangeRef,
         );
         chartRef.current.update("none");
         lastFrame = timestamp;
@@ -382,7 +400,12 @@ export default function Graph({ currentThemeName }: GraphProps) {
     if (chartRef.current) {
       // console.log("Graph: Theme changed (options object updated), re-applying options and padding.");
       chartRef.current.options = options; // Apply new themed options
-      applyXPaddedRange(chartRef.current, chartDataRef.current, Date.now()); // Re-apply padding
+      applyXPaddedRange(
+        chartRef.current,
+        chartDataRef.current,
+        Date.now(),
+        xRangeRef,
+      ); // Re-apply padding
       chartRef.current.update("none"); // Update to reflect changes
     }
   }, [options]); // `options` itself depends on `currentThemeName` via `currentThemeColors`
