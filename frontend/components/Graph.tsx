@@ -172,10 +172,12 @@ export default function Graph({ currentThemeName }: GraphProps) {
         continue;
       }
 
-      const historical = filtered.map((p: any) => ({
-        x: new Date(p.time).getTime(),
-        y: parseFloat(p.bac) || 0,
-      }));
+      const historical = filtered
+        .map((p: any) => ({
+          x: new Date(p.time).getTime(),
+          y: parseFloat(p.bac) || 0,
+        }))
+        .sort((a, b) => a.x - b.x);
 
       const lastHistPointForCalc =
         historical.length > 0
