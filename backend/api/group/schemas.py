@@ -19,7 +19,7 @@ class GroupRead(GroupBase):
     owner_id: uuid.UUID
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserGroupRead(BaseModel):
@@ -27,7 +27,7 @@ class UserGroupRead(BaseModel):
     active: bool
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class GroupMember(BaseModel):

@@ -23,7 +23,7 @@ async def create_drink(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(update_last_seen_user),
 ):
-    db_drink = Drink(**drink.model_dump(), user_id=user.id)
+    db_drink = Drink(**drink.dict(), user_id=user.id)
     session.add(db_drink)
     await session.commit()
     await session.refresh(db_drink)
@@ -79,7 +79,7 @@ async def update_drink(
     if not db_drink or db_drink.user_id != user.id:
         raise HTTPException(status_code=404, detail="Drink not found")
 
-    for field, value in drink.model_dump().items():
+    for field, value in drink.dict().items():
         setattr(db_drink, field, value)
 
     await session.commit()

@@ -4,20 +4,19 @@ from typing import Optional
 
 from fastapi_users import schemas
 from fastapi_users.schemas import BaseUserCreate, BaseUserUpdate, BaseUser
-from pydantic import BaseModel, field_validator, constr, confloat, EmailStr, Field
-from pydantic.json_schema import SkipJsonSchema
+from pydantic import BaseModel, validator, constr, confloat, EmailStr, Field
 from re import match
 
 
 class UserBase(BaseModel):
     display_name: constr(min_length=3, max_length=20, strict=True)
-    weight: confloat(ge=10.0, le=650.0, strict=True)
+    weight: confloat(ge=10.0, le=650.0)
     gender: constr(strict=True)
-    height: Optional[confloat(ge=100.0, le=250.0, strict=True)] = None
+    height: Optional[confloat(ge=100.0, le=250.0)] = None
     dob: date
     real_dob: bool
 
-    @field_validator("display_name")
+    @validator("display_name")
     @classmethod
     def validate_display_name(cls, v: str) -> str:
         rgx = r"^[a-zA-Z0-9_]+$"
@@ -25,7 +24,7 @@ class UserBase(BaseModel):
             raise ValueError("Display name must contain only letters, numbers, and underscores!")
         return v
 
-    @field_validator("dob")
+    @validator("dob")
     @classmethod
     def validate_dob(cls, dob: date) -> date:
         today = date.today()
@@ -34,7 +33,7 @@ class UserBase(BaseModel):
             raise ValueError("Age must be between 10 and 150 years!")
         return dob
 
-    @field_validator("gender")
+    @validator("gender")
     @classmethod
     def normalize_gender(cls, gender: str) -> str:
         if gender.upper() not in ["MALE", "FEMALE"]:
@@ -51,23 +50,23 @@ class UserRead(schemas.BaseUser[uuid.UUID], UserBase):
     is_verified: Optional[bool] = Field(None, exclude=True)
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserCreate(BaseUserCreate):
     email: EmailStr
     password: str
     display_name: constr(min_length=3, max_length=20, strict=True)
-    weight: confloat(ge=10.0, le=650.0, strict=True)
+    weight: confloat(ge=10.0, le=650.0)
     gender: constr(strict=True)
-    height: Optional[confloat(ge=100.0, le=250.0, strict=True)]
+    height: Optional[confloat(ge=100.0, le=250.0)]
     dob: date
     real_dob: bool
 
     # Hide internal fields from the docs and incoming payload
-    is_active: SkipJsonSchema[bool] = None
-    is_superuser: SkipJsonSchema[bool] = None
-    is_verified: SkipJsonSchema[bool] = None
+    is_active: bool = Field(None, exclude=True)
+    is_superuser: bool = Field(None, exclude=True)
+    is_verified: bool = Field(None, exclude=True)
 
 
 class UserUpdate(BaseUserUpdate):
@@ -78,7 +77,7 @@ class UserUpdate(BaseUserUpdate):
     dob: Optional[date] = None
     real_dob: Optional[bool] = None
 
-    @field_validator("display_name")
+    @validator("display_name")
     @classmethod
     def validate_display_name(cls, v: str) -> str:
         rgx = r"^[a-zA-Z0-9_]+$"
@@ -86,7 +85,7 @@ class UserUpdate(BaseUserUpdate):
             raise ValueError("Display name must contain only letters, numbers, and underscores!")
         return v
 
-    @field_validator("dob")
+    @validator("dob")
     @classmethod
     def validate_dob(cls, dob: date) -> date:
         today = date.today()
@@ -95,7 +94,7 @@ class UserUpdate(BaseUserUpdate):
             raise ValueError("Age must be between 10 and 150 years!")
         return dob
 
-    @field_validator("gender")
+    @validator("gender")
     @classmethod
     def normalize_gender(cls, gender: str) -> str:
         if gender.upper() not in ["MALE", "FEMALE"]:
