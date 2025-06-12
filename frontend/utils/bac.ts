@@ -36,9 +36,25 @@ export function calculateCurrentBAC(
   states: { time: number | string; bac: number }[] | undefined,
 ): number {
   if (!states || states.length === 0) return 0;
-  const last = states[states.length - 1];
-  const lastTime =
-    typeof last.time === "number" ? last.time : new Date(last.time).getTime();
-  const hoursElapsed = Math.max(0, (Date.now() - lastTime) / 3600000);
-  return Math.max(0, last.bac - 0.015 * hoursElapsed);
+
+  const now = Date.now();
+
+  let lastTime =
+    typeof states[0].time === "number"
+      ? states[0].time
+      : new Date(states[0].time).getTime();
+  let lastBac = states[0].bac;
+
+  for (const s of states) {
+    const t = typeof s.time === "number" ? s.time : new Date(s.time).getTime();
+    if (t <= now) {
+      lastTime = t;
+      lastBac = s.bac;
+    } else {
+      break;
+    }
+  }
+
+  const hoursElapsed = Math.max(0, (now - lastTime) / 3600000);
+  return Math.max(0, lastBac - 0.015 * hoursElapsed);
 }
