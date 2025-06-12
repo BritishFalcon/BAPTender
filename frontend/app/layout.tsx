@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ visibility: "hidden" }}>
       <head>
         <Script
           id="init-theme"
@@ -24,8 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var idx = stored !== null ? parseInt(stored, 10) : 0;
                   if (isNaN(idx) || idx < 0 || idx >= themes.length) idx = 0;
                   document.documentElement.className = themes[idx];
+                  document.documentElement.style.visibility = 'visible';
                 } catch (e) {
                   document.documentElement.className = themes[0];
+                  document.documentElement.style.visibility = 'visible';
                 }
               })();
             `,
