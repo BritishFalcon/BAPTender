@@ -183,12 +183,21 @@ export function BAPTenderProvider({ children, token }: { children: React.ReactNo
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "hidden") {
+        eventSourceRef.current?.close();
+      } else if (document.visibilityState === "visible") {
         reinitialize();
       }
     };
+
+    const handleFocus = () => {
+      reinitialize();
+    };
+
+    window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
+      window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [reinitialize]);
