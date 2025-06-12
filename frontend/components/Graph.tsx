@@ -191,8 +191,8 @@ export default function Graph({ currentThemeName }: GraphProps) {
       );
 
       const currentDataPoints = historical.length > 0 ? [...historical] : [];
-      currentDataPoints.push({ x: now, y: realTimeBAC });
       currentDataPoints.sort((a, b) => a.x - b.x);
+      currentDataPoints.push({ x: now, y: realTimeBAC });
 
       const member = state.members.find((m: any) => m.id === uid);
       const label = member?.displayName || uid;
