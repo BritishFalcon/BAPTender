@@ -32,11 +32,24 @@ export function calculateDrinkBAC(
   return Math.max(0, (alcoholGrams / (bodyWeightG * widmark)) * 100);
 }
 
-export function estimateCurrentBAC(states: { time: number | string; bac: number }[] | undefined): number {
+export function estimateCurrentBAC(
+  states: { time: number | string; bac: number }[] | undefined,
+): number {
   if (!states || states.length === 0) return 0;
-  const last = states[states.length - 1];
-  const lastTime = typeof last.time === "number" ? last.time : new Date(last.time).getTime();
   const now = Date.now();
+  // Find the most recent state at or before "now". States may end with a
+  // future sobriety point, so simply taking the last entry can underestimate
+  // the actual BAC.
+  let last = states[0];
+  for (const point of states) {
+    const t = typeof point.time === "number" ? point.time : new Date(point.time).getTime();
+    if (t <= now) {
+      last = point;
+    } else {
+      break;
+    }
+  }
+  const lastTime = typeof last.time === "number" ? last.time : new Date(last.time).getTime();
   const hours = Math.max(0, (now - lastTime) / 3600000);
   return Math.max(0, last.bac - 0.015 * hours);
 }
