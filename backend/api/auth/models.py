@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, Date, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 
 from api.core.db import Base
 
