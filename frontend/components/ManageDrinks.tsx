@@ -140,32 +140,34 @@ export default function ManageDrinks() {
         <table className="themed-table text-xs" style={{ maxWidth: '400px' }}>
           <thead>
             <tr>
-              <th scope="col" className="w-8"></th>
-              <th scope="col">Time</th>
-              <th scope="col">ML</th>
-              <th scope="col">%</th>
-              <th scope="col">Title</th>
-              <th scope="col" className="w-8"></th>
+              <th scope="col" className="w-8 px-1 py-1"></th>
+              <th scope="col" className="px-1 py-1">Time</th>
+              <th scope="col" className="px-1 py-1">ML</th>
+              <th scope="col" className="px-1 py-1">%</th>
+              <th scope="col" className="px-1 py-1">Title</th>
+              <th scope="col" className="w-8 px-1 py-1"></th>
             </tr>
           </thead>
           <tbody>
             {drinks.map((drink) => (
               <tr key={drink.id}>
-                <td>
+                <td className="px-1 py-1">
                   <button
-                    className="themed-button p-1 w-6 h-6 flex items-center justify-center"
+                    className="themed-button w-6 h-6 flex items-center justify-center"
+                    style={{ padding: 0 }}
                     onClick={() => startEdit(drink)}
                   >
                     <EditIcon />
                   </button>
                 </td>
-                <td>{new Date(drink.add_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                <td>{drink.volume}</td>
-                <td>{(drink.strength * 100).toFixed(1)}</td>
-                <td>{drink.nickname}</td>
-                <td>
+                <td className="px-1 py-1">{new Date(drink.add_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                <td className="px-1 py-1">{drink.volume}</td>
+                <td className="px-1 py-1">{(drink.strength * 100).toFixed(1)}</td>
+                <td className="px-1 py-1">{drink.nickname}</td>
+                <td className="px-1 py-1">
                   <button
-                    className="themed-button-danger p-1 w-6 h-6 flex items-center justify-center"
+                    className="themed-button-danger w-6 h-6 flex items-center justify-center"
+                    style={{ padding: 0 }}
                     onClick={() => removeDrink(drink.id)}
                   >
                     <TrashIcon />
