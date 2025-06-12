@@ -120,3 +120,50 @@ async def test_auth_and_flows(client):
 
     r = await client.post(f"/group/leave/{group_id}", headers=headers2)
     assert r.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_update_and_delete_drink(client):
+    user = {
+        "email": "editor@example.com",
+        "password": "secret",
+        "display_name": "editor",
+        "weight": 75,
+        "gender": "male",
+        "height": 180,
+        "dob": "1991-01-01",
+        "real_dob": True,
+    }
+
+    r = await _register(client, user)
+    assert r.status_code == 201
+
+    token = (await _login(client, user["email"], user["password"])).json()[
+        "access_token"
+    ]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    drink = {
+        "nickname": "wine",
+        "volume": 200,
+        "strength": 0.1,
+        "add_time": "2025-01-01T01:00:00Z",
+    }
+
+    r = await client.post("/drinks", json=drink, headers=headers)
+    assert r.status_code == 200
+    drink_id = r.json()["id"]
+
+    updated = drink.copy()
+    updated["nickname"] = "updated"
+
+    r = await client.put(f"/drinks/{drink_id}", json=updated, headers=headers)
+    assert r.status_code == 200
+    assert r.json()["nickname"] == "updated"
+
+    r = await client.delete(f"/drinks/{drink_id}", headers=headers)
+    assert r.status_code == 200
+
+    r = await client.get("/drinks/mine", headers=headers)
+    assert r.status_code == 200
+    assert len(r.json()) == 0
