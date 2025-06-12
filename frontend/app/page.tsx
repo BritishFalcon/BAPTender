@@ -11,13 +11,16 @@ const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
 import UserBACStatusTable from "@/components/Table";
 import DrinksForm from "@/components/Drinks";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import usePersistentTheme from "@/hooks/usePersistentTheme";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); // Start with loading true
-  const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
+  const { currentThemeIndex, currentTheme, toggleTheme } = usePersistentTheme(
+    themes,
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -65,20 +68,11 @@ export default function HomePage() {
 
     verifyTokenAndInitialize();
 
-    // Apply initial theme to HTML element (can remain, or be tied to token state if preferred)
-    document.documentElement.className = themes[currentThemeIndex];
   }, []); // Run once on mount
 
-  const toggleTheme = () => {
-    const nextThemeIndex = (currentThemeIndex + 1) % themes.length;
-    setCurrentThemeIndex(nextThemeIndex);
-    document.documentElement.className = themes[nextThemeIndex];
+  const handleToggleTheme = () => {
+    toggleTheme();
   };
-
-  // Effect to update document class when theme changes
-  useEffect(() => {
-    document.documentElement.className = themes[currentThemeIndex];
-  }, [currentThemeIndex]);
 
 
   if (loading) {
@@ -92,7 +86,7 @@ export default function HomePage() {
     );
   }
 
-  const currentThemeName = themes[currentThemeIndex];
+  const currentThemeName = currentTheme;
 
   if (!token) { // If token is null after loading and verification attempt
     return (
@@ -103,7 +97,7 @@ export default function HomePage() {
           <h1
             className="glitch text-5xl md:text-7xl mb-2 font-vt323 cursor-pointer"
             data-text="BAPTender!"
-            onClick={toggleTheme}
+            onClick={handleToggleTheme}
           >
             BAPTender!
           </h1>
@@ -133,7 +127,7 @@ return (
       <div className={currentThemeName}>
         <CustomParticlesBackground currentTheme={currentThemeName} />
         <div className="min-h-screen flex flex-col relative z-10">
-          <Header onThemeToggle={toggleTheme} currentThemeName={currentThemeName}/>
+          <Header onThemeToggle={handleToggleTheme} currentThemeName={currentThemeName}/>
 
         {/* 👇 REFACTORED MAIN SECTION 👇 */}
         {/* We make the main container a flex column and apply a single gap to space out its direct children perfectly. */}

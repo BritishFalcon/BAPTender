@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthGate from "@/components/AuthGate";
+import usePersistentTheme from "@/hooks/usePersistentTheme";
+
+const themes = ["theme-og", "theme-dark", "theme-cyber", "theme-neon"];
 
 export default function InvitePage({ params }: { params: { token: string } }) {
   const router = useRouter();
   const inviteToken = params.token;
+
+  const { currentTheme } = usePersistentTheme(themes);
 
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Checking authentication...");
@@ -57,14 +62,14 @@ export default function InvitePage({ params }: { params: { token: string } }) {
       localStorage.setItem("pendingInvite", inviteToken);
     }
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className={`${currentTheme} min-h-screen flex items-center justify-center p-4`}>
         <AuthGate onLogin={handleLogin} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 font-sharetech">
+    <div className={`${currentTheme} min-h-screen flex items-center justify-center p-4 font-sharetech`}>
       <p>{status}</p>
     </div>
   );
