@@ -11,8 +11,8 @@ export default function RegisterForm({
     email: "",
     password: "",
     displayName: "",
-    weight: 70,
-    height: 175,
+    weight: "70",
+    height: "175",
     gender: "male",
     dob: "",
     realDob: true,
@@ -37,6 +37,10 @@ export default function RegisterForm({
       setError("Date of Birth is required, old timer.");
       return;
     }
+    if (form.weight === "" || isNaN(parseFloat(form.weight as any))) {
+      setError("Please enter a valid weight.");
+      return;
+    }
 
     try {
       console.log("Registering with form:", form);
@@ -45,8 +49,9 @@ export default function RegisterForm({
         email: form.email,
         password: form.password,
         display_name: form.displayName,
-        weight: form.weight,
-        height: form.height,
+        weight: parseFloat(form.weight as any),
+        height:
+          form.height === "" ? null : parseFloat(form.height as any),
         gender: form.gender,
         dob: form.dob,
         real_dob: form.realDob,
@@ -166,7 +171,10 @@ export default function RegisterForm({
           placeholder="Weight (kg)"
           value={form.weight}
           onChange={(e) =>
-            updateField("weight", parseFloat(e.target.value) || 0)
+            updateField(
+              "weight",
+              e.target.value === "" ? "" : parseFloat(e.target.value),
+            )
           }
           className="themed-input text-sm p-[var(--small-spacing)]"
         />
@@ -184,7 +192,10 @@ export default function RegisterForm({
           placeholder="Height (cm)"
           value={form.height}
           onChange={(e) =>
-            updateField("height", parseFloat(e.target.value) || 0)
+            updateField(
+              "height",
+              e.target.value === "" ? "" : parseFloat(e.target.value),
+            )
           }
           className="themed-input text-sm p-[var(--small-spacing)]"
         />

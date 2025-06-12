@@ -61,9 +61,9 @@ export default function AccountWidget() {
   const [formData, setFormData] = useState({
     displayName: "",
     email: "",
-    weight: 0,
+    weight: "",
     gender: "male", // Default to a valid option
-    height: 0,
+    height: "",
     dob: "",
     // realDob is no longer a separate form field, will always be true in payload
   });
@@ -77,9 +77,15 @@ export default function AccountWidget() {
     setFormData({
       displayName: userFromContext.displayName || "",
       email: userFromContext.email || "",
-      weight: userFromContext.weight || 0,
+      weight:
+        userFromContext.weight && userFromContext.weight > 0
+          ? String(userFromContext.weight)
+          : "",
       gender: userFromContext.gender?.toLowerCase() || "male",
-      height: userFromContext.height || 0,
+      height:
+        userFromContext.height && userFromContext.height > 0
+          ? String(userFromContext.height)
+          : "",
       dob: userFromContext.dob ? formatDateForInput(userFromContext.dob) : "",
       // realDob is not part of this form state anymore
     });
@@ -99,7 +105,11 @@ export default function AccountWidget() {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "weight" || name === "height" ? parseFloat(value) || 0 : value,
+        name === "weight" || name === "height"
+          ? value === ""
+            ? ""
+            : parseFloat(value)
+          : value,
     }));
   };
 
@@ -120,11 +130,18 @@ export default function AccountWidget() {
       return;
     }
 
+    if (formData.weight === "" || isNaN(parseFloat(formData.weight as any))) {
+      displayLocalFeedback("error", "Please enter a valid weight.");
+      setIsSaving(false);
+      return;
+    }
+
     const payload = {
       displayName: formData.displayName,
-      weight: formData.weight,
+      weight: parseFloat(formData.weight as any),
       gender: formData.gender,
-      height: formData.height && formData.height > 0 ? formData.height : null,
+      height:
+        formData.height === "" ? null : parseFloat(formData.height as any),
       dob: formData.dob,
       realDob: true, // Always send true
     };
@@ -332,7 +349,7 @@ export default function AccountWidget() {
                   id="acc_height"
                   type="number"
                   name="height"
-                  value={formData.height || ""}
+                  value={formData.height}
                   onChange={handleChange}
                   placeholder="Optional"
                   className="themed-input text-sm p-[var(--small-spacing)]"
