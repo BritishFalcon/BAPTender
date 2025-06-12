@@ -9,6 +9,7 @@ from api.drinks.models import Drink, ArchivedDrink
 from api.core.db import get_async_session
 from api.realtime.calculations import drinks_to_bac
 from api.realtime.actions import update_user
+from api.utils import calculate_age
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -62,9 +63,17 @@ async def update_archival(user_id: uuid.UUID):
         drinks = drinks_result.scalars().all()
         if not drinks: return
 
-        drinks_data = [{"volume": d.volume, "strength": d.strength, "time": d.add_time} for d in drinks]
-        age = (datetime.now(timezone.utc).date() - user.dob).days / 365.25
-        user_data = {"weight": user.weight, "gender": user.gender, "height": user.height, "age": age}
+        drinks_data = [
+            {"volume": d.volume, "strength": d.strength, "time": d.add_time}
+            for d in drinks
+        ]
+        age = calculate_age(user.dob, datetime.now(timezone.utc).date())
+        user_data = {
+            "weight": user.weight,
+            "gender": user.gender,
+            "height": user.height,
+            "age": age,
+        }
 
         states = drinks_to_bac(drinks_data, user_data)
         if not states: return

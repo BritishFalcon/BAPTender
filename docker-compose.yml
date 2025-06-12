@@ -19,6 +19,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
       DB_HOST: db
       DB_PORT: 5432
+      MIN_WEIGHT: ${MIN_WEIGHT:-10}
+      MAX_WEIGHT: ${MAX_WEIGHT:-650}
+      MIN_HEIGHT: ${MIN_HEIGHT:-100}
+      MAX_HEIGHT: ${MAX_HEIGHT:-250}
+      MIN_AGE: ${MIN_AGE:-10}
+      MAX_AGE: ${MAX_AGE:-150}
     depends_on:
       - db
     expose:
@@ -28,6 +34,12 @@ services:
     build: ./frontend
     environment:
       BACKEND_URL: http://backend:8000
+      NEXT_PUBLIC_MIN_WEIGHT: ${MIN_WEIGHT:-10}
+      NEXT_PUBLIC_MAX_WEIGHT: ${MAX_WEIGHT:-650}
+      NEXT_PUBLIC_MIN_HEIGHT: ${MIN_HEIGHT:-100}
+      NEXT_PUBLIC_MAX_HEIGHT: ${MAX_HEIGHT:-250}
+      NEXT_PUBLIC_MIN_AGE: ${MIN_AGE:-10}
+      NEXT_PUBLIC_MAX_AGE: ${MAX_AGE:-150}
     ports:
       - "3000:3000"
     depends_on:

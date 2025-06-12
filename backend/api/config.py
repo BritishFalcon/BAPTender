@@ -18,3 +18,11 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}"
 )
+
+# Validation ranges with environment fallbacks
+MIN_WEIGHT = float(os.getenv("MIN_WEIGHT", "10"))
+MAX_WEIGHT = float(os.getenv("MAX_WEIGHT", "650"))
+MIN_HEIGHT = float(os.getenv("MIN_HEIGHT", "100"))
+MAX_HEIGHT = float(os.getenv("MAX_HEIGHT", "250"))
+MIN_AGE = int(os.getenv("MIN_AGE", "10"))
+MAX_AGE = int(os.getenv("MAX_AGE", "150"))

@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import {
+  MIN_WEIGHT,
+  MAX_WEIGHT,
+  MIN_HEIGHT,
+  MAX_HEIGHT,
+  MIN_AGE,
+  MAX_AGE,
+} from "@/config";
 
 export default function RegisterForm({
   onLogin,
@@ -12,17 +20,29 @@ export default function RegisterForm({
     password: "",
     confirmPassword: "",
     displayName: "",
-    weight: 70,
-    height: 175,
+    weight: "70",
+    height: "175",
     gender: "male",
     dob: "",
     realDob: true,
   });
   const [error, setError] = useState<string | null>(null);
 
-  function updateField(field: string, value: any) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+function updateField(field: string, value: any) {
+  setForm((prev) => ({ ...prev, [field]: value }));
+}
+
+function calculateAge(dobString: string): number {
+  if (!dobString) return 0;
+  const dob = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
   }
+  return age;
+}
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,6 +62,32 @@ export default function RegisterForm({
       setError("Date of Birth is required, old timer.");
       return;
     }
+    if (form.weight === "" || isNaN(parseFloat(form.weight as any))) {
+      setError("Please enter a valid weight.");
+      return;
+    }
+    const weightNum = parseFloat(form.weight as any);
+    if (weightNum < MIN_WEIGHT || weightNum > MAX_WEIGHT) {
+      setError(`Weight must be between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`);
+      return;
+    }
+    if (form.height !== "") {
+      const heightNum = parseFloat(form.height as any);
+      if (isNaN(heightNum)) {
+        setError("Please enter a valid height.");
+        return;
+      }
+      if (heightNum < MIN_HEIGHT || heightNum > MAX_HEIGHT) {
+        setError(`Height must be between ${MIN_HEIGHT} and ${MAX_HEIGHT} cm.`);
+        return;
+      }
+    }
+
+    const age = calculateAge(form.dob);
+    if (age < MIN_AGE || age > MAX_AGE) {
+      setError(`Age must be between ${MIN_AGE} and ${MAX_AGE} years.`);
+      return;
+    }
 
     try {
       console.log("Registering with form:", form);
@@ -50,8 +96,9 @@ export default function RegisterForm({
         email: form.email,
         password: form.password,
         display_name: form.displayName,
-        weight: form.weight,
-        height: form.height,
+        weight: parseFloat(form.weight as any),
+        height:
+          form.height === "" ? null : parseFloat(form.height as any),
         gender: form.gender,
         dob: form.dob,
         real_dob: form.realDob,
@@ -187,8 +234,13 @@ export default function RegisterForm({
           type="number"
           placeholder="Weight (kg)"
           value={form.weight}
+          min={MIN_WEIGHT}
+          max={MAX_WEIGHT}
           onChange={(e) =>
-            updateField("weight", parseFloat(e.target.value) || 0)
+            updateField(
+              "weight",
+              e.target.value === "" ? "" : parseFloat(e.target.value),
+            )
           }
           className="themed-input text-sm p-[var(--small-spacing)]"
         />
@@ -205,8 +257,13 @@ export default function RegisterForm({
           type="number"
           placeholder="Height (cm)"
           value={form.height}
+          min={MIN_HEIGHT}
+          max={MAX_HEIGHT}
           onChange={(e) =>
-            updateField("height", parseFloat(e.target.value) || 0)
+            updateField(
+              "height",
+              e.target.value === "" ? "" : parseFloat(e.target.value),
+            )
           }
           className="themed-input text-sm p-[var(--small-spacing)]"
         />
