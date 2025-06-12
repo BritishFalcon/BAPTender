@@ -1,7 +1,10 @@
 // app/layout.tsx
 import "./globals.css";
 import React from "react";
-import Script from 'next/script';
+import Script from "next/script";
+import { cookies } from "next/headers";
+
+const themes = ["theme-og", "theme-dark", "theme-cyber", "theme-neon"];
 
 export const metadata = {
   title: "BAPTender 2025 - Polished Edition",
@@ -9,30 +12,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = cookies();
+  const idxCookie = cookieStore.get("themeIndex")?.value;
+  let idx = idxCookie ? parseInt(idxCookie, 10) : 0;
+  if (isNaN(idx) || idx < 0 || idx >= themes.length) idx = 0;
+  const themeClass = themes[idx];
+
   return (
-    <html lang="en" style={{ visibility: "hidden" }}>
+    <html lang="en" className={themeClass}>
       <head>
-        <Script
-          id="init-theme"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var themes = ['theme-og','theme-dark','theme-cyber','theme-neon'];
-                  var stored = localStorage.getItem('themeIndex');
-                  var idx = stored !== null ? parseInt(stored, 10) : 0;
-                  if (isNaN(idx) || idx < 0 || idx >= themes.length) idx = 0;
-                  document.documentElement.className = themes[idx];
-                  document.documentElement.style.visibility = 'visible';
-                } catch (e) {
-                  document.documentElement.className = themes[0];
-                  document.documentElement.style.visibility = 'visible';
-                }
-              })();
-            `,
-          }}
-        />
         <Script
           src="https://code.jquery.com/jquery-3.6.0.min.js"
           strategy="beforeInteractive"
