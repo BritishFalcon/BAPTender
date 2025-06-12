@@ -10,6 +10,7 @@ export default function RegisterForm({
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     displayName: "",
     weight: 70,
     height: 175,
@@ -31,6 +32,10 @@ export default function RegisterForm({
     if (form.password.length < 3) {
       // Or whatever your backend minimum is
       setError("Password too short, mate.");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
     if (!form.dob) {
@@ -133,6 +138,23 @@ export default function RegisterForm({
           required
           value={form.password}
           onChange={(e) => updateField("password", e.target.value)}
+          className="themed-input text-sm p-[var(--small-spacing)]"
+        />
+      </div>
+      {/* Confirm Password */}
+      <div>
+        <label
+          className="block text-xs font-medium font-sharetech mb-[var(--tiny-spacing)]"
+          style={{ color: "var(--accent-color)" }}
+        >
+          Confirm Password
+        </label>
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          required
+          value={form.confirmPassword}
+          onChange={(e) => updateField("confirmPassword", e.target.value)}
           className="themed-input text-sm p-[var(--small-spacing)]"
         />
       </div>
