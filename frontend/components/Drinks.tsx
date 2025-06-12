@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
-import { calculateDrinkBAC, estimateCurrentBAC } from "@/utils/bac";
+import { calculateDrinkBAC, calculateCurrentBAC } from "@/utils/bac";
 
 export default function DrinksForm() {
   const [volume, setVolume] = useState("");
@@ -32,8 +32,15 @@ export default function DrinksForm() {
     const age = user.dob
       ? (Date.now() - new Date(user.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
       : undefined;
-    const add = calculateDrinkBAC(vol, str / 100, user.weight, user.gender, age, user.height);
-    const current = estimateCurrentBAC(state.states[user.id]);
+    const add = calculateDrinkBAC(
+      vol,
+      str / 100,
+      user.weight,
+      user.gender,
+      age,
+      user.height,
+    );
+    const current = calculateCurrentBAC(state.states[user.id]);
     setBacAdd(add);
     setBacTotal(current + add);
   }, [volume, strength, state]);
