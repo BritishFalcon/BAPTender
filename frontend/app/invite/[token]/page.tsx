@@ -36,11 +36,15 @@ export default function InvitePage({ params }: { params: { token: string } }) {
           localStorage.removeItem("pendingInvite");
           setTimeout(() => router.push("/"), 1500);
         } else {
-          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          const err = await res
+            .json()
+            .catch(() => ({ detail: "Unknown error" }));
           setStatus(`Failed to join: ${err.detail}`);
+          localStorage.removeItem("pendingInvite");
         }
       } catch (e) {
         setStatus("Network error while joining group.");
+        localStorage.removeItem("pendingInvite");
       }
     };
     join();
