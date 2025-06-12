@@ -7,7 +7,7 @@ jest.mock('../Drinks', () => () => <div data-testid="log" />);
 jest.mock('../ManageDrinks', () => () => <div data-testid="drinks" />);
 
 describe('DrinkTabs', () => {
-  it('should display the "Log Drink" tab by default and switch to the "Drinks" tab on click', async () => {
+  it('should display the "Add Drink" tab by default and switch to the "Manage" tab on click', async () => {
     const user = userEvent.setup();
     render(<DrinkTabs />);
 
@@ -16,7 +16,7 @@ describe('DrinkTabs', () => {
     expect(screen.queryByTestId('drinks')).not.toBeInTheDocument();
 
     // 2. Simulate the user clicking on the "Drinks" tab button.
-    await user.click(screen.getByRole('button', { name: /Drinks/i }));
+    await user.click(screen.getByRole('button', { name: /Manage/i }));
 
     // 3. Check the new state: "Drinks" content should now be visible, and "Log Drink" should be gone.
     expect(screen.getByTestId('drinks')).toBeInTheDocument();
