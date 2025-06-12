@@ -4,9 +4,8 @@ from fastapi_users.authentication import (
     BearerTransport,
     JWTStrategy,
 )
+from api.config import SECRET
 
-# TODO: Migrate to environment variables
-SECRET = "SECRET"
 ALGORITHM = "HS256"
 
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")

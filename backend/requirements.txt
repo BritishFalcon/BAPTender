@@ -11,3 +11,4 @@ sse-starlette
 httpx
 asgi_lifespan
 aiosqlite
+python-dotenv
