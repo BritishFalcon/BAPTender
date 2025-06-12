@@ -118,6 +118,11 @@ export default function AccountWidget() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
+  const MIN_WEIGHT = 10;
+  const MAX_WEIGHT = 650;
+  const MIN_HEIGHT = 100;
+  const MAX_HEIGHT = 250;
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -134,6 +139,33 @@ export default function AccountWidget() {
       displayLocalFeedback("error", "Please enter a valid weight.");
       setIsSaving(false);
       return;
+    }
+
+    const weightNum = parseFloat(formData.weight as any);
+    if (weightNum < MIN_WEIGHT || weightNum > MAX_WEIGHT) {
+      displayLocalFeedback(
+        "error",
+        `Weight must be between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    if (formData.height !== "") {
+      const heightNum = parseFloat(formData.height as any);
+      if (isNaN(heightNum)) {
+        displayLocalFeedback("error", "Please enter a valid height.");
+        setIsSaving(false);
+        return;
+      }
+      if (heightNum < MIN_HEIGHT || heightNum > MAX_HEIGHT) {
+        displayLocalFeedback(
+          "error",
+          `Height must be between ${MIN_HEIGHT} and ${MAX_HEIGHT} cm.`,
+        );
+        setIsSaving(false);
+        return;
+      }
     }
 
     const payload = {
@@ -333,6 +365,8 @@ export default function AccountWidget() {
                   type="number"
                   name="weight"
                   value={formData.weight}
+                  min={MIN_WEIGHT}
+                  max={MAX_WEIGHT}
                   onChange={handleChange}
                   className="themed-input text-sm p-[var(--small-spacing)]"
                 />
@@ -350,6 +384,8 @@ export default function AccountWidget() {
                   type="number"
                   name="height"
                   value={formData.height}
+                  min={MIN_HEIGHT}
+                  max={MAX_HEIGHT}
                   onChange={handleChange}
                   placeholder="Optional"
                   className="themed-input text-sm p-[var(--small-spacing)]"

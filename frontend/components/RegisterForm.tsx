@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 
+const MIN_WEIGHT = 10;
+const MAX_WEIGHT = 650;
+const MIN_HEIGHT = 100;
+const MAX_HEIGHT = 250;
+
 export default function RegisterForm({
   onLogin,
 }: {
@@ -40,6 +45,22 @@ export default function RegisterForm({
     if (form.weight === "" || isNaN(parseFloat(form.weight as any))) {
       setError("Please enter a valid weight.");
       return;
+    }
+    const weightNum = parseFloat(form.weight as any);
+    if (weightNum < MIN_WEIGHT || weightNum > MAX_WEIGHT) {
+      setError(`Weight must be between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`);
+      return;
+    }
+    if (form.height !== "") {
+      const heightNum = parseFloat(form.height as any);
+      if (isNaN(heightNum)) {
+        setError("Please enter a valid height.");
+        return;
+      }
+      if (heightNum < MIN_HEIGHT || heightNum > MAX_HEIGHT) {
+        setError(`Height must be between ${MIN_HEIGHT} and ${MAX_HEIGHT} cm.`);
+        return;
+      }
     }
 
     try {
@@ -170,6 +191,8 @@ export default function RegisterForm({
           type="number"
           placeholder="Weight (kg)"
           value={form.weight}
+          min={MIN_WEIGHT}
+          max={MAX_WEIGHT}
           onChange={(e) =>
             updateField(
               "weight",
@@ -191,6 +214,8 @@ export default function RegisterForm({
           type="number"
           placeholder="Height (cm)"
           value={form.height}
+          min={MIN_HEIGHT}
+          max={MAX_HEIGHT}
           onChange={(e) =>
             updateField(
               "height",
