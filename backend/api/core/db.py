@@ -6,7 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 import redis.asyncio as redis
 
-from api.config import DATABASE_URL
+from api.config import (
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+    POSTGRES_DB,
+    DB_HOST,
+    DB_PORT,
+)
+
+# Resolve the database URL at import time so tests can override it
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{DB_HOST}:{DB_PORT}/{POSTGRES_DB}",
+)
 
 HOST_URL = os.getenv("HOST_URL", "http://localhost:8000")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
