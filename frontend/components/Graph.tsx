@@ -103,7 +103,7 @@ const applyXPaddedRange = (
 
   if (allTimes.length === 0) {
     const defaultWindowMs = 3600000; // 1 hour
-    const padMs = defaultWindowMs * 0.05;
+    const padMs = defaultWindowMs * 0.02;
     minVal = currentTime - defaultWindowMs / 2 - padMs;
     maxVal = currentTime + defaultWindowMs / 2 + padMs;
   } else {
@@ -115,7 +115,7 @@ const applyXPaddedRange = (
     const currentMaxWithNow = Math.max(currentTime, currentMaxPoint);
 
     const range = currentMaxWithNow - historicalMin;
-    const pad = range > 0 ? range * 0.05 : 5 * 60 * 1000; // Min 5 min padding
+    const pad = range > 0 ? range * 0.02 : 2.5 * 60 * 1000; // Min 2.5 min padding
 
     minVal = historicalMin - pad;
     maxVal = currentMaxWithNow + pad;

@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import dynamic from "next/dynamic";
 const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
 import UserBACStatusTable from "@/components/Table";
-import DrinksForm from "@/components/Drinks";
+import DrinkTabs from "@/components/DrinkTabs";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
@@ -146,16 +146,12 @@ return (
               <Graph currentThemeName={currentThemeName}/>
             </div>
             <div className="themed-card">
-              <h2 className="themed-card-header font-sharetech">Standings (Future Blackouts)</h2>
-              <UserBACStatusTable/>
+              <h2 className="themed-card-header font-sharetech">Standings</h2>
+              <UserBACStatusTable />
             </div>
           </div>
 
-          {/* The DrinksForm card is now just another flex item, spaced by the parent's gap */}
-          <div className="themed-card">
-            <h2 className="themed-card-header font-sharetech">Log a Drink (You Lush)</h2>
-            <DrinksForm/>
-          </div>
+          <DrinkTabs />
 
         </main>
 

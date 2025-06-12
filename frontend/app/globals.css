@@ -268,6 +268,13 @@ body {
   @apply px-4 py-3 whitespace-nowrap text-sm;
 }
 
+/* Compact variant for tables with tight spacing */
+.compact-table th,
+.compact-table td {
+  padding-left: var(--tiny-spacing);
+  padding-right: var(--tiny-spacing);
+}
+
 /* app/globals.css */
 
 /* ... your existing theme variables and other global styles ... */

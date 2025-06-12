@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 
-export type PopupName = "account" | "groups" | null;
+export type PopupName = "account" | "groups" | "drink-edit" | null;
 
 interface PopupContextType {
   activePopup: PopupName;

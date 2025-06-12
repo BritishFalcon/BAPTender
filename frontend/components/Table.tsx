@@ -58,7 +58,7 @@ export default function UserBACStatusTable() {
     .sort((a, b) => parseFloat(b.currentBac) - parseFloat(a.currentBac)); // Sort by BAC descending
 
   return (
-    <div className="responsive-table-container mt-[var(--large-spacing)]">
+    <div className="responsive-table-container my-[var(--base-spacing)]">
       <table className="themed-table">
         <thead>
           <tr>
