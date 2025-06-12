@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="theme-og"> {/* Default theme */}
+    <html lang="en">
       <head>
         <Script
           id="init-theme"
@@ -21,13 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 try {
                   var themes = ['theme-og','theme-dark','theme-cyber','theme-neon'];
                   var stored = localStorage.getItem('themeIndex');
-                  if (stored !== null) {
-                    var idx = parseInt(stored, 10);
-                    if (!isNaN(idx) && idx >= 0 && idx < themes.length) {
-                      document.documentElement.className = themes[idx];
-                    }
-                  }
-                } catch (e) {}
+                  var idx = stored !== null ? parseInt(stored, 10) : 0;
+                  if (isNaN(idx) || idx < 0 || idx >= themes.length) idx = 0;
+                  document.documentElement.className = themes[idx];
+                } catch (e) {
+                  document.documentElement.className = themes[0];
+                }
               })();
             `,
           }}
