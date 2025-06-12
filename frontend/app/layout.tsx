@@ -1,6 +1,7 @@
 // app/layout.tsx
 import "./globals.css";
 import React from "react";
+import { cookies } from 'next/headers';
 import Script from 'next/script';
 
 export const metadata = {
@@ -9,8 +10,10 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = cookies();
+  const theme = cookieStore.get('theme')?.value || 'theme-og';
   return (
-    <html lang="en" className="theme-og"> {/* Default theme */}
+    <html lang="en" className={theme}>
       <head>
         <Script
           src="https://code.jquery.com/jquery-3.6.0.min.js"

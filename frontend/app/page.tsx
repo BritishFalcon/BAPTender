@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import dynamic from "next/dynamic";
 const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
 import UserBACStatusTable from "@/components/Table";
-import DrinksForm from "@/components/Drinks";
+import DrinkTabs from "@/components/DrinkTabs";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
@@ -21,6 +21,15 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
+    const cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+    const storedTheme = cookieMatch ? cookieMatch[1] : localStorage.getItem("theme");
+    if (storedTheme && themes.includes(storedTheme)) {
+      setCurrentThemeIndex(themes.indexOf(storedTheme));
+      document.documentElement.className = storedTheme;
+    } else {
+      document.documentElement.className = themes[currentThemeIndex];
+    }
+
     const verifyTokenAndInitialize = async () => {
       const storedToken = localStorage.getItem("token");
       // console.log("Stored token on load:", storedToken);
@@ -64,27 +73,30 @@ export default function HomePage() {
     };
 
     verifyTokenAndInitialize();
-
-    // Apply initial theme to HTML element (can remain, or be tied to token state if preferred)
-    document.documentElement.className = themes[currentThemeIndex];
   }, []); // Run once on mount
 
   const toggleTheme = () => {
     const nextThemeIndex = (currentThemeIndex + 1) % themes.length;
     setCurrentThemeIndex(nextThemeIndex);
-    document.documentElement.className = themes[nextThemeIndex];
+    const newTheme = themes[nextThemeIndex];
+    document.documentElement.className = newTheme;
+    localStorage.setItem("theme", newTheme);
+    document.cookie = `theme=${newTheme}; path=/; max-age=31536000`;
   };
 
   // Effect to update document class when theme changes
   useEffect(() => {
-    document.documentElement.className = themes[currentThemeIndex];
+    const themeName = themes[currentThemeIndex];
+    document.documentElement.className = themeName;
+    localStorage.setItem("theme", themeName);
+    document.cookie = `theme=${themeName}; path=/; max-age=31536000`;
   }, [currentThemeIndex]);
 
 
   if (loading) {
     return (
       // Apply the default/current theme even to the loading screen for consistency
-      <div className={`${themes[currentThemeIndex]} flex items-center justify-center min-h-screen bg-bg-color text-text-color`}>
+      <div className="flex items-center justify-center min-h-screen bg-bg-color text-text-color">
         {/* Particle background can also be here if desired during loading */}
         <CustomParticlesBackground currentTheme={themes[currentThemeIndex]} />
         <p className="text-2xl font-sharetech animate-pulse relative z-10">Verifying Session...</p>
@@ -97,7 +109,7 @@ export default function HomePage() {
   if (!token) { // If token is null after loading and verification attempt
     return (
       <PopupProvider>
-        <div className={currentThemeName}>
+        <div>
           <CustomParticlesBackground currentTheme={currentThemeName} />
           <main className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
           <h1
@@ -130,7 +142,7 @@ export default function HomePage() {
 return (
   <PopupProvider>
     <BAPTenderProvider token={token}>
-      <div className={currentThemeName}>
+      <div>
         <CustomParticlesBackground currentTheme={currentThemeName} />
         <div className="min-h-screen flex flex-col relative z-10">
           <Header onThemeToggle={toggleTheme} currentThemeName={currentThemeName}/>
@@ -146,16 +158,12 @@ return (
               <Graph currentThemeName={currentThemeName}/>
             </div>
             <div className="themed-card">
-              <h2 className="themed-card-header font-sharetech">Standings (Future Blackouts)</h2>
-              <UserBACStatusTable/>
+              <h2 className="themed-card-header font-sharetech">Standings</h2>
+              <UserBACStatusTable />
             </div>
           </div>
 
-          {/* The DrinksForm card is now just another flex item, spaced by the parent's gap */}
-          <div className="themed-card">
-            <h2 className="themed-card-header font-sharetech">Log a Drink (You Lush)</h2>
-            <DrinksForm/>
-          </div>
+          <DrinkTabs />
 
         </main>
 

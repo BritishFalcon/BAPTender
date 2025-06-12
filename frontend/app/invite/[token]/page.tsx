@@ -36,11 +36,15 @@ export default function InvitePage({ params }: { params: { token: string } }) {
           localStorage.removeItem("pendingInvite");
           setTimeout(() => router.push("/"), 1500);
         } else {
-          const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+          const err = await res
+            .json()
+            .catch(() => ({ detail: "Unknown error" }));
           setStatus(`Failed to join: ${err.detail}`);
+          localStorage.removeItem("pendingInvite");
         }
       } catch (e) {
         setStatus("Network error while joining group.");
+        localStorage.removeItem("pendingInvite");
       }
     };
     join();
@@ -63,9 +67,22 @@ export default function InvitePage({ params }: { params: { token: string } }) {
     );
   }
 
+  const showReturn =
+    status.startsWith("Failed") || status.toLowerCase().includes("error");
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 font-sharetech">
-      <p>{status}</p>
+      <div className="text-center space-y-4">
+        <p>{status}</p>
+        {showReturn && (
+          <button
+            onClick={() => router.push("/")}
+            className="themed-button font-vt323 text-lg"
+          >
+            Return to BAPTender
+          </button>
+        )}
+      </div>
     </div>
   );
 }

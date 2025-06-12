@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  MutableRefObject,
+} from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -85,6 +91,7 @@ const applyXPaddedRange = (
   chart: ChartJS | null,
   datasets: CustomDataset[],
   currentTime: number,
+  rangeRef?: React.MutableRefObject<{ min: number | undefined; max: number | undefined }>,
 ) => {
   if (!chart || !chart.options.scales?.x) {
     // console.warn("applyXPaddedRange: Chart or x-axis not ready.");
@@ -96,7 +103,7 @@ const applyXPaddedRange = (
 
   if (allTimes.length === 0) {
     const defaultWindowMs = 3600000; // 1 hour
-    const padMs = defaultWindowMs * 0.05;
+    const padMs = defaultWindowMs * 0.02;
     minVal = currentTime - defaultWindowMs / 2 - padMs;
     maxVal = currentTime + defaultWindowMs / 2 + padMs;
   } else {
@@ -108,7 +115,7 @@ const applyXPaddedRange = (
     const currentMaxWithNow = Math.max(currentTime, currentMaxPoint);
 
     const range = currentMaxWithNow - historicalMin;
-    const pad = range > 0 ? range * 0.05 : 5 * 60 * 1000; // Min 5 min padding
+    const pad = range > 0 ? range * 0.02 : 2.5 * 60 * 1000; // Min 2.5 min padding
 
     minVal = historicalMin - pad;
     maxVal = currentMaxWithNow + pad;
@@ -121,6 +128,10 @@ const applyXPaddedRange = (
   // Directly modify the chart's options for min and max
   chart.options.scales.x.min = minVal;
   chart.options.scales.x.max = maxVal;
+  if (rangeRef) {
+    rangeRef.current.min = minVal;
+    rangeRef.current.max = maxVal;
+  }
   // console.log(`applyXPaddedRange: Applied X-Range: ${minVal} to ${maxVal}`);
 };
 
@@ -132,6 +143,10 @@ export default function Graph({ currentThemeName }: GraphProps) {
   const { state } = useBAPTender();
   const chartRef = useRef<ChartJS<"line", DataPoint[], string> | null>(null);
   const chartDataRef = useRef<CustomDataset[]>([]);
+  const xRangeRef = useRef<{ min: number | undefined; max: number | undefined }>({
+    min: undefined,
+    max: undefined,
+  });
 
   const currentThemeColors = useMemo(
     () => getThemeColorsFromCSS(),
@@ -157,10 +172,11 @@ export default function Graph({ currentThemeName }: GraphProps) {
         continue;
       }
 
-      const historical = filtered.map((p: any) => ({
-        x: new Date(p.time).getTime(),
-        y: parseFloat(p.bac) || 0,
-      }));
+      const historical = filtered
+        .map((p: any) => ({
+          x: new Date(p.time).getTime(),
+          y: parseFloat(p.bac) || 0,
+        }));
 
       const lastHistPointForCalc =
         historical.length > 0
@@ -177,7 +193,6 @@ export default function Graph({ currentThemeName }: GraphProps) {
 
       const currentDataPoints = historical.length > 0 ? [...historical] : [];
       currentDataPoints.push({ x: now, y: realTimeBAC });
-      currentDataPoints.sort((a, b) => a.x - b.x);
 
       const member = state.members.find((m: any) => m.id === uid);
       const label = member?.displayName || uid;
@@ -221,6 +236,8 @@ export default function Graph({ currentThemeName }: GraphProps) {
             tooltipFormat: "HH:mm, MMM d",
             displayFormats: { minute: "HH:mm", hour: "HH:mm" },
           },
+          min: xRangeRef.current.min,
+          max: xRangeRef.current.max,
           title: {
             display: true,
             text: "Time",
@@ -286,19 +303,47 @@ export default function Graph({ currentThemeName }: GraphProps) {
     // Apply options which include themed colors BEFORE first data and range setting
     chartRef.current.options = options;
 
-    applyXPaddedRange(chartRef.current, initialDatasets, Date.now());
+    applyXPaddedRange(chartRef.current, initialDatasets, Date.now(), xRangeRef);
     chartRef.current.data.datasets = initialDatasets;
     chartRef.current.update("none");
-  }, [buildSeriesData, options]); // Run when buildSeriesData or options change
+  }, []); // Run once on mount
+
+  const prevThemeRef = useRef(currentThemeName);
 
   useEffect(() => {
     if (!chartRef.current) return;
     const freshData = buildSeriesData();
-    chartDataRef.current = freshData;
-    chartRef.current.data.datasets = freshData;
-    applyXPaddedRange(chartRef.current, freshData, Date.now());
-    chartRef.current.update();
-  }, [state, buildSeriesData, options]);
+    const existing = chartRef.current.data.datasets as CustomDataset[];
+    const themeChanged = prevThemeRef.current !== currentThemeName;
+    prevThemeRef.current = currentThemeName;
+
+    const existingMap = new Map(existing.map((ds) => [ds.label, ds]));
+    const updatedDatasets: CustomDataset[] = [];
+
+    for (const newDs of freshData) {
+      const match = existingMap.get(newDs.label);
+      if (match) {
+        match.data = newDs.data;
+        match.borderColor = newDs.borderColor;
+        match.backgroundColor = newDs.backgroundColor;
+        match.fill = newDs.fill;
+        match.tension = newDs.tension;
+        match.pointRadius = newDs.pointRadius;
+        match.pointBackgroundColor = newDs.pointBackgroundColor;
+        match.borderWidth = newDs.borderWidth;
+        updatedDatasets.push(match);
+        existingMap.delete(newDs.label);
+      } else {
+        updatedDatasets.push(newDs);
+      }
+    }
+
+    chartDataRef.current = updatedDatasets;
+    chartRef.current.data.datasets = updatedDatasets;
+    applyXPaddedRange(chartRef.current, updatedDatasets, Date.now(), xRangeRef);
+    // Skip animation if we only changed theme-related properties
+    chartRef.current.update(themeChanged ? "none" : undefined);
+  }, [state, buildSeriesData, currentThemeName]);
 
   useEffect(() => {
     const frameInterval = 1000 / 30;
@@ -337,6 +382,7 @@ export default function Graph({ currentThemeName }: GraphProps) {
           chartRef.current,
           chartRef.current.data.datasets as CustomDataset[],
           now,
+          xRangeRef,
         );
         chartRef.current.update("none");
         lastFrame = timestamp;
@@ -354,7 +400,12 @@ export default function Graph({ currentThemeName }: GraphProps) {
     if (chartRef.current) {
       // console.log("Graph: Theme changed (options object updated), re-applying options and padding.");
       chartRef.current.options = options; // Apply new themed options
-      applyXPaddedRange(chartRef.current, chartDataRef.current, Date.now()); // Re-apply padding
+      applyXPaddedRange(
+        chartRef.current,
+        chartDataRef.current,
+        Date.now(),
+        xRangeRef,
+      ); // Re-apply padding
       chartRef.current.update("none"); // Update to reflect changes
     }
   }, [options]); // `options` itself depends on `currentThemeName` via `currentThemeColors`

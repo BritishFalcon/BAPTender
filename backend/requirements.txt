@@ -1,6 +1,6 @@
-fastapi
+fastapi>=0.110
 uvicorn[standard]==0.30.6
-pydantic
+pydantic>=2
 sqlalchemy
 fastapi-users[sqlalchemy]
 asyncpg
@@ -8,3 +8,7 @@ apscheduler
 pyjwt
 redis
 sse-starlette
+httpx
+asgi_lifespan
+aiosqlite
+python-dotenv

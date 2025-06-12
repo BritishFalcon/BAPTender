@@ -4,6 +4,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useBAPTender } from "@/context/BAPTenderContext";
 import useWindowWidth from "@/hooks/useWindowWidth";
 import { usePopup } from "@/context/PopupContext";
+import {
+  MIN_WEIGHT,
+  MAX_WEIGHT,
+  MIN_HEIGHT,
+  MAX_HEIGHT,
+  MIN_AGE,
+  MAX_AGE,
+} from "@/config";
 
 const UserIcon = () => (
   <svg
@@ -40,6 +48,18 @@ const formatDateForInput = (dateString: string | Date): string => {
   }
 };
 
+const calculateAge = (dobString: string): number => {
+  if (!dobString) return 0;
+  const dob = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 export default function AccountWidget() {
   const { state } = useBAPTender();
   const userFromContext = state.self;
@@ -61,9 +81,9 @@ export default function AccountWidget() {
   const [formData, setFormData] = useState({
     displayName: "",
     email: "",
-    weight: 0,
+    weight: "",
     gender: "male", // Default to a valid option
-    height: 0,
+    height: "",
     dob: "",
     // realDob is no longer a separate form field, will always be true in payload
   });
@@ -77,9 +97,15 @@ export default function AccountWidget() {
     setFormData({
       displayName: userFromContext.displayName || "",
       email: userFromContext.email || "",
-      weight: userFromContext.weight || 0,
+      weight:
+        userFromContext.weight && userFromContext.weight > 0
+          ? String(userFromContext.weight)
+          : "",
       gender: userFromContext.gender?.toLowerCase() || "male",
-      height: userFromContext.height || 0,
+      height:
+        userFromContext.height && userFromContext.height > 0
+          ? String(userFromContext.height)
+          : "",
       dob: userFromContext.dob ? formatDateForInput(userFromContext.dob) : "",
       // realDob is not part of this form state anymore
     });
@@ -99,7 +125,11 @@ export default function AccountWidget() {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "weight" || name === "height" ? parseFloat(value) || 0 : value,
+        name === "weight" || name === "height"
+          ? value === ""
+            ? ""
+            : parseFloat(value)
+          : value,
     }));
   };
 
@@ -107,6 +137,7 @@ export default function AccountWidget() {
     setFeedback({ type, message });
     setTimeout(() => setFeedback(null), 4000);
   };
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,11 +151,55 @@ export default function AccountWidget() {
       return;
     }
 
+    if (formData.weight === "" || isNaN(parseFloat(formData.weight as any))) {
+      displayLocalFeedback("error", "Please enter a valid weight.");
+      setIsSaving(false);
+      return;
+    }
+
+    const weightNum = parseFloat(formData.weight as any);
+    if (weightNum < MIN_WEIGHT || weightNum > MAX_WEIGHT) {
+      displayLocalFeedback(
+        "error",
+        `Weight must be between ${MIN_WEIGHT} and ${MAX_WEIGHT} kg.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    const age = calculateAge(formData.dob);
+    if (age < MIN_AGE || age > MAX_AGE) {
+      displayLocalFeedback(
+        "error",
+        `Age must be between ${MIN_AGE} and ${MAX_AGE} years.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    if (formData.height !== "") {
+      const heightNum = parseFloat(formData.height as any);
+      if (isNaN(heightNum)) {
+        displayLocalFeedback("error", "Please enter a valid height.");
+        setIsSaving(false);
+        return;
+      }
+      if (heightNum < MIN_HEIGHT || heightNum > MAX_HEIGHT) {
+        displayLocalFeedback(
+          "error",
+          `Height must be between ${MIN_HEIGHT} and ${MAX_HEIGHT} cm.`,
+        );
+        setIsSaving(false);
+        return;
+      }
+    }
+
     const payload = {
       displayName: formData.displayName,
-      weight: formData.weight,
+      weight: parseFloat(formData.weight as any),
       gender: formData.gender,
-      height: formData.height && formData.height > 0 ? formData.height : null,
+      height:
+        formData.height === "" ? null : parseFloat(formData.height as any),
       dob: formData.dob,
       realDob: true, // Always send true
     };
@@ -316,6 +391,8 @@ export default function AccountWidget() {
                   type="number"
                   name="weight"
                   value={formData.weight}
+                  min={MIN_WEIGHT}
+                  max={MAX_WEIGHT}
                   onChange={handleChange}
                   className="themed-input text-sm p-[var(--small-spacing)]"
                 />
@@ -332,7 +409,9 @@ export default function AccountWidget() {
                   id="acc_height"
                   type="number"
                   name="height"
-                  value={formData.height || ""}
+                  value={formData.height}
+                  min={MIN_HEIGHT}
+                  max={MAX_HEIGHT}
                   onChange={handleChange}
                   placeholder="Optional"
                   className="themed-input text-sm p-[var(--small-spacing)]"

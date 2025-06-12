@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useBAPTender } from "@/context/BAPTenderContext";
+import { calculateDrinkBAC, calculateCurrentBAC } from "@/utils/bac";
 
 export default function DrinksForm() {
   const [volume, setVolume] = useState("");
@@ -8,40 +10,40 @@ export default function DrinksForm() {
   const [nickname, setNickname] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bacAdd, setBacAdd] = useState<number | null>(null);
+  const [bacTotal, setBacTotal] = useState<number | null>(null);
 
-  const handleRemoveLastDrink = async () => {
-    setMessage(null);
-    setError(null);
+  const { state } = useBAPTender();
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Authentication token is missing. Please log in again.");
+  useEffect(() => {
+    const vol = Number(volume);
+    const str = Number(strength);
+    if (isNaN(vol) || vol <= 0 || isNaN(str) || str <= 0) {
+      setBacAdd(null);
+      setBacTotal(null);
       return;
     }
-
-    try {
-      const res = await fetch("/api/drinks/last", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res
-          .json()
-          .catch(() => ({ detail: `Request failed with status ${res.status}` }));
-        setError(`Error: ${errorData.detail}`);
-        return;
-      }
-
-      setMessage("Last drink removed!");
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      console.error("Error removing last drink:", err);
-      setError("Network hiccup while removing drink. Try again.");
+    const user = state.self;
+    if (!user || user.weight <= 0) {
+      setBacAdd(null);
+      setBacTotal(null);
+      return;
     }
-  };
+    const age = user.dob
+      ? (Date.now() - new Date(user.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+      : undefined;
+    const add = calculateDrinkBAC(
+      vol,
+      str / 100,
+      user.weight,
+      user.gender,
+      age,
+      user.height,
+    );
+    const current = calculateCurrentBAC(state.states[user.id]);
+    setBacAdd(add);
+    setBacTotal(current + add);
+  }, [volume, strength, state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,15 +192,16 @@ export default function DrinksForm() {
           placeholder="Your liver's nemesis"
         />
       </div>
+      {bacAdd !== null && (
+        <p
+          className="text-sm font-sharetech"
+          style={{ color: "var(--accent-color)" }}
+        >
+          BAC impact: +{bacAdd.toFixed(3)}% (new BAC {(bacTotal ?? 0).toFixed(3)}%)
+        </p>
+      )}
       <button type="submit" className="themed-button w-full font-vt323 text-lg">
         Log Drink
-      </button>
-      <button
-        type="button"
-        onClick={handleRemoveLastDrink}
-        className="themed-button-danger w-full font-vt323 text-sm py-1.5 mt-[var(--small-spacing)]"
-      >
-        Remove Last Drink
       </button>
       {message && (
         <p
