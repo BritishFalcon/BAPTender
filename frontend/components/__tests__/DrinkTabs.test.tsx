@@ -9,7 +9,10 @@ describe('DrinkTabs', () => {
     const user = userEvent.setup();
     render(<DrinkTabs />);
     expect(screen.getByTestId('log')).toBeInTheDocument();
+
     await user.click(screen.getByText('Drinks'));
+    await screen.findByTestId('drinks'); // Explicitly wait for the DOM update
+    
     expect(screen.getByTestId('drinks')).toBeInTheDocument();
   });
 });
