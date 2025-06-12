@@ -8,8 +8,8 @@ import AuthGate from "@/components/AuthGate";
 import Header from "@/components/Header";
 import dynamic from "next/dynamic";
 const Graph = dynamic(() => import("@/components/Graph"), { ssr: false });
-import DrinksForm from "@/components/Drinks";
-import StandingsTabs from "@/components/StandingsTabs";
+import UserBACStatusTable from "@/components/Table";
+import DrinkTabs from "@/components/DrinkTabs";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 const themes = ['theme-og', 'theme-dark', 'theme-cyber', 'theme-neon'];
@@ -145,14 +145,13 @@ return (
               <h2 className="themed-card-header font-sharetech">Graph of Shame</h2>
               <Graph currentThemeName={currentThemeName}/>
             </div>
-            <StandingsTabs />
+            <div className="themed-card">
+              <h2 className="themed-card-header font-sharetech">Standings</h2>
+              <UserBACStatusTable />
+            </div>
           </div>
 
-          {/* The DrinksForm card is now just another flex item, spaced by the parent's gap */}
-          <div className="themed-card">
-            <h2 className="themed-card-header font-sharetech">Log a Drink (You Lush)</h2>
-            <DrinksForm/>
-          </div>
+          <DrinkTabs />
 
         </main>
 
