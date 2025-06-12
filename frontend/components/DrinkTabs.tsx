@@ -16,7 +16,7 @@ export default function DrinkTabs() {
 
   return (
     <div className="themed-card h-full flex flex-col">
-      <div className="flex">{tabButton("log", "Log Drink")}{tabButton("drinks", "Drinks")}</div>
+      <div className="flex">{tabButton("log", "Add Drink")}{tabButton("drinks", "Manage")}</div>
       <div className="flex-1 mt-2">
         {tab === "log" ? <DrinksForm /> : <ManageDrinks />}
       </div>
