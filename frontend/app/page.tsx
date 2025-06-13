@@ -153,22 +153,26 @@ return (
 
           {/* This grid now just controls the Graph and Table */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            <div className="themed-card">
+            <div className="themed-card flex flex-col max-h-[var(--max-card-height)] overflow-hidden">
               <h2 className="themed-card-header font-sharetech">Graph of Shame</h2>
-              <Graph currentThemeName={currentThemeName}/>
+              <div className="flex-1">
+                <Graph currentThemeName={currentThemeName}/>
+              </div>
             </div>
-            <div className="themed-card">
+            <div className="themed-card flex flex-col max-h-[var(--max-card-height)] overflow-hidden">
               <h2 className="themed-card-header font-sharetech">Standings</h2>
-              <UserBACStatusTable />
+              <div className="flex-1 overflow-y-auto">
+                <UserBACStatusTable/>
+              </div>
             </div>
           </div>
 
-          <DrinkTabs />
+          <DrinkTabs/>
 
         </main>
 
-        <footer
-            className="text-center px-4 py-0 font-vt323 text-xs text-accent-color border-t border-t-[var(--card-border-color)]">
+          <footer
+              className="text-center px-4 py-0 font-vt323 text-xs text-accent-color border-t border-t-[var(--card-border-color)]">
           BAPTender - Always verify BAC with a calibrated breathalyzer.
         </footer>
         </div>
