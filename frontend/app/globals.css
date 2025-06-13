@@ -12,6 +12,7 @@
   --small-spacing: calc(var(--base-spacing) / 2);
   --tiny-spacing: calc(var(--small-spacing) / 2);
   --large-spacing: calc(var(--base-spacing) * 2);
+  --max-card-height: 32rem;
 
   /* Default Theme (OG) applied to body by default */
   --bg-color: #f8f9fa;

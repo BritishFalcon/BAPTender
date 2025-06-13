@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, constr, confloat
+from pydantic import BaseModel, constr, confloat, Field
 from typing import Optional
 from uuid import UUID
 from datetime import datetime, timezone
@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 class DrinkBase(BaseModel):
     nickname: Optional[constr(min_length=1, max_length=50, strict=True)] = None
-    add_time: datetime = datetime.now(tz=timezone.utc)
+    add_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     volume: confloat(ge=0.0, le=5000.0, strict=True)  # ml
     strength: confloat(ge=0.0, le=1.0, strict=True)  # ABV
 

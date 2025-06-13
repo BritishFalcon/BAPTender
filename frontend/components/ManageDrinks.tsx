@@ -132,12 +132,14 @@ export default function ManageDrinks() {
   };
 
   return (
-    <div>
+    // The root div now uses flexbox to fill the container's full height.
+    <div className="flex flex-col h-full">
       {error && (
         <p className="text-red-500 text-sm font-sharetech mb-2">{error}</p>
       )}
-      <div className="overflow-y-auto max-h-64">
-        <table className="themed-table compact-table text-xs" style={{ maxWidth: '400px' }}>
+      {/* This div grows to fill available space (`flex-1`) and scrolls. The `max-h-64` is gone. */}
+      <div className="flex-1 overflow-y-auto">
+        <table className="themed-table compact-table text-xs w-full" style={{ maxWidth: '400px' }}>
           <thead>
             <tr>
               <th scope="col" className="w-8"></th>
@@ -243,4 +245,3 @@ export default function ManageDrinks() {
     </div>
   );
 }
-
