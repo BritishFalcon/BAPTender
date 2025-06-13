@@ -2,8 +2,6 @@ version: '3.8'
 services:
   db:
     image: postgres:15
-    env_file:
-      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,8 +13,6 @@ services:
 
   backend:
     build: ./backend
-    env_file:
-      - .env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
       DB_HOST: db
