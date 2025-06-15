@@ -1,42 +1,72 @@
-// app/layout.tsx
 import "./globals.css";
 import React from "react";
 import { cookies } from 'next/headers';
-import Script from 'next/script';
+import type { Metadata } from 'next';
 
-export const metadata = {
-  title: "BAPTender 2025 - Polished Edition",
-  description: "Track your BAC with cyberpunk style. Drink responsibly, you legend.",
+// Define metadata with all the bells and whistles
+export const metadata: Metadata = {
+  metadataBase: new URL('https://baptender.com'),
+  title: "BAPTender | Track Your Drinks, Know Your BAC",
+  description: "BAPTender is a fun, multiplayer real-time BAC tracker and alcohol logging tool, built to promote awareness and group safety. Track your drinks with friends, monitor your sobriety, and drink smarter with our sleek, night-out friendly design.",
+  
+  // Add the crucial viewport tag
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+
+  // Open Graph (for Facebook, Discord, etc.)
+  openGraph: {
+    title: 'BAPTender | Track Your Drinks, Know Your BAC',
+    description: 'A real-time, multiplayer BAC tracker to help you and your friends drink smarter.',
+    url: 'https://baptender.com',
+    siteName: 'BAPTender',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_GB',
+    type: 'website',
+  },
+
+  // Twitter Card
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BAPTender | Track Your Drinks, Know Your BAC',
+    description: 'A real-time, multiplayer BAC tracker to help you and your friends drink smarter.',
+    images: ['/og-image.png'], // Twitter uses the same OG image
+  },
+  
+  // PWA Stuff
+  applicationName: "BAPTender",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BAPTender",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = cookies();
   const theme = cookieStore.get('theme')?.value || 'theme-og';
+
   return (
     <html lang="en" className={theme}>
-      <head>
-        <Script
-          src="https://code.jquery.com/jquery-3.6.0.min.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          src="https://d3js.org/d3.v3.min.js" // Epoch uses older D3
-          strategy="beforeInteractive"
-        />
-        {/* Link to Epoch CSS */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/epoch/0.8.4/css/epoch.min.css"
-          // If you have it locally: href="/path/to/your/epoch.min.css"
-        />
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/epoch/0.8.4/js/epoch.min.js"
-          strategy="beforeInteractive"
-        />
-      </head>
-      <body>
+    <head>
+        <link rel="manifest" href="/manifest.json"/>
+        <link rel="apple-touch-icon" href="/icons/baptender_icon_180x180.png"/>
+    </head>
+    <body>
         {children}
-      </body>
+    </body>
     </html>
   );
 }

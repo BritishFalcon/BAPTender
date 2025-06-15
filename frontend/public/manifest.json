@@ -1,0 +1,22 @@
+{
+  "name": "BAPTender",
+  "short_name": "BAPTender",
+  "description": "BAPTender is a fun, multiplayer real-time BAC tracker and alcohol logging tool, built to promote awareness and group safety. Track your drinks with friends, monitor your sobriety, and drink smarter.",
+  "icons": [
+    {
+      "src": "/icons/baptender_icon_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/baptender_transparent_icon_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#141414",
+  "background_color": "#141414",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait"
+}
